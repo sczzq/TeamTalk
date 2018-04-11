@@ -40,21 +40,21 @@ void imconn_callback(void* callback_data, uint8_t msg, uint32_t handle, void* pP
 
 	switch (msg)
 	{
-	case NETLIB_MSG_CONFIRM:
-		pConn->OnConfirm();
-		break;
-	case NETLIB_MSG_READ:
-		pConn->OnRead();
-		break;
-	case NETLIB_MSG_WRITE:
-		pConn->OnWrite();
-		break;
-	case NETLIB_MSG_CLOSE:
-		pConn->OnClose();
-		break;
-	default:
-		log("!!!imconn_callback error msg: %d ", msg);
-		break;
+		case NETLIB_MSG_CONFIRM:
+			pConn->OnConfirm();
+			break;
+		case NETLIB_MSG_READ:
+			pConn->OnRead();
+			break;
+		case NETLIB_MSG_WRITE:
+			pConn->OnWrite();
+			break;
+		case NETLIB_MSG_CLOSE:
+			pConn->OnClose();
+			break;
+		default:
+			log("!!!imconn_callback error msg: %d ", msg);
+			break;
 	}
 
 	pConn->ReleaseRef();
@@ -80,7 +80,7 @@ CImConn::~CImConn()
 int CImConn::Send(void* data, int len)
 {
 	m_last_send_tick = get_tick_count();
-//	++g_send_pkt_cnt;
+	//	++g_send_pkt_cnt;
 
 	if (m_busy)
 	{
@@ -112,10 +112,10 @@ int CImConn::Send(void* data, int len)
 		m_busy = true;
 		log("send busy, remain=%d ", m_out_buf.GetWriteOffset());
 	}
-    else
-    {
-        OnWriteCompelete();
-    }
+	else
+	{
+		OnWriteCompelete();
+	}
 
 	return len;
 }
@@ -138,28 +138,28 @@ void CImConn::OnRead()
 		m_last_recv_tick = get_tick_count();
 	}
 
-    CImPdu* pPdu = NULL;
+	CImPdu* pPdu = NULL;
 	try
-    {
+	{
 		while ( ( pPdu = CImPdu::ReadPdu(m_in_buf.GetBuffer(), m_in_buf.GetWriteOffset()) ) )
 		{
-            uint32_t pdu_len = pPdu->GetLength();
-            
+			uint32_t pdu_len = pPdu->GetLength();
+
 			HandlePdu(pPdu);
 
 			m_in_buf.Read(NULL, pdu_len);
 			delete pPdu;
-            pPdu = NULL;
-//			++g_recv_pkt_cnt;
+			pPdu = NULL;
+			//			++g_recv_pkt_cnt;
 		}
 	} catch (CPduException& ex) {
 		log("!!!catch exception, sid=%u, cid=%u, err_code=%u, err_msg=%s, close the connection ",
 				ex.GetServiceId(), ex.GetCommandId(), ex.GetErrorCode(), ex.GetErrorMsg());
-        if (pPdu) {
-            delete pPdu;
-            pPdu = NULL;
-        }
-        OnClose();
+		if (pPdu) {
+			delete pPdu;
+			pPdu = NULL;
+		}
+		OnClose();
 	}
 }
 

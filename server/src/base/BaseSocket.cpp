@@ -31,14 +31,14 @@ CBaseSocket* FindBaseSocket(net_handle_t fd)
 
 CBaseSocket::CBaseSocket()
 {
-	//log("CBaseSocket::CBaseSocket\n");
+	log("CBaseSocket::CBaseSocket\n");
 	m_socket = INVALID_SOCKET;
 	m_state = SOCKET_STATE_IDLE;
 }
 
 CBaseSocket::~CBaseSocket()
 {
-	//log("CBaseSocket::~CBaseSocket, socket=%d\n", m_socket);
+	log("CBaseSocket::~CBaseSocket, socket=%d\n", m_socket);
 }
 
 int CBaseSocket::Listen(const char* server_ip, uint16_t port, callback_t callback, void* callback_data)
@@ -60,7 +60,7 @@ int CBaseSocket::Listen(const char* server_ip, uint16_t port, callback_t callbac
 
 	sockaddr_in serv_addr;
 	_SetAddr(server_ip, port, &serv_addr);
-    int ret = ::bind(m_socket, (sockaddr*)&serv_addr, sizeof(serv_addr));
+	int ret = ::bind(m_socket, (sockaddr*)&serv_addr, sizeof(serv_addr));
 	if (ret == SOCKET_ERROR)
 	{
 		log("bind failed, err_code=%d", _GetErrorCode());
@@ -115,7 +115,7 @@ net_handle_t CBaseSocket::Connect(const char* server_ip, uint16_t port, callback
 	m_state = SOCKET_STATE_CONNECTING;
 	AddBaseSocket(this);
 	CEventDispatch::Instance()->AddEvent(m_socket, SOCKET_ALL);
-	
+
 	return (net_handle_t)m_socket;
 }
 

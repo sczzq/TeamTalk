@@ -107,30 +107,30 @@ int netlib_option(net_handle_t handle, int opt, void* optval)
 
 	switch (opt)
 	{
-	case NETLIB_OPT_SET_CALLBACK:
-		pSocket->SetCallback((callback_t)optval);
-		break;
-	case NETLIB_OPT_SET_CALLBACK_DATA:
-		pSocket->SetCallbackData(optval);
-		break;
-	case NETLIB_OPT_GET_REMOTE_IP:
-		*(string*)optval = pSocket->GetRemoteIP();
-		break;
-	case NETLIB_OPT_GET_REMOTE_PORT:
-		*(uint16_t*)optval = pSocket->GetRemotePort();
-		break;
-	case NETLIB_OPT_GET_LOCAL_IP:
-		*(string*)optval = pSocket->GetLocalIP();
-		break;
-	case NETLIB_OPT_GET_LOCAL_PORT:
-		*(uint16_t*)optval = pSocket->GetLocalPort();
-		break;
-	case NETLIB_OPT_SET_SEND_BUF_SIZE:
-		pSocket->SetSendBufSize(*(uint32_t*)optval);
-		break;
-	case NETLIB_OPT_SET_RECV_BUF_SIZE:
-		pSocket->SetRecvBufSize(*(uint32_t*)optval);
-		break;
+		case NETLIB_OPT_SET_CALLBACK:
+			pSocket->SetCallback((callback_t)optval);
+			break;
+		case NETLIB_OPT_SET_CALLBACK_DATA:
+			pSocket->SetCallbackData(optval);
+			break;
+		case NETLIB_OPT_GET_REMOTE_IP:
+			*(string*)optval = pSocket->GetRemoteIP();
+			break;
+		case NETLIB_OPT_GET_REMOTE_PORT:
+			*(uint16_t*)optval = pSocket->GetRemotePort();
+			break;
+		case NETLIB_OPT_GET_LOCAL_IP:
+			*(string*)optval = pSocket->GetLocalIP();
+			break;
+		case NETLIB_OPT_GET_LOCAL_PORT:
+			*(uint16_t*)optval = pSocket->GetLocalPort();
+			break;
+		case NETLIB_OPT_SET_SEND_BUF_SIZE:
+			pSocket->SetSendBufSize(*(uint32_t*)optval);
+			break;
+		case NETLIB_OPT_SET_RECV_BUF_SIZE:
+			pSocket->SetRecvBufSize(*(uint32_t*)optval);
+			break;
 	}
 
 	pSocket->ReleaseRef();
@@ -162,10 +162,10 @@ void netlib_eventloop(uint32_t wait_timeout)
 
 void netlib_stop_event()
 {
-    CEventDispatch::Instance()->StopDispatch();
+	CEventDispatch::Instance()->StopDispatch();
 }
 
 bool netlib_is_running()
 {
-    return CEventDispatch::Instance()->isRunning();
+	return CEventDispatch::Instance()->isRunning();
 }

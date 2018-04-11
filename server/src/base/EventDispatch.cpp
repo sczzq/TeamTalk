@@ -7,7 +7,7 @@ CEventDispatch* CEventDispatch::m_pEventDispatch = NULL;
 
 CEventDispatch::CEventDispatch()
 {
-    running = false;
+	running = false;
 #ifdef _WIN32
 	FD_ZERO(&m_read_set);
 	FD_ZERO(&m_write_set);
@@ -94,18 +94,18 @@ void CEventDispatch::_CheckTimer()
 
 void CEventDispatch::AddLoop(callback_t callback, void* user_data)
 {
-    TimerItem* pItem = new TimerItem;
-    pItem->callback = callback;
-    pItem->user_data = user_data;
-    m_loop_list.push_back(pItem);
+	TimerItem* pItem = new TimerItem;
+	pItem->callback = callback;
+	pItem->user_data = user_data;
+	m_loop_list.push_back(pItem);
 }
 
 void CEventDispatch::_CheckLoop()
 {
-    for (list<TimerItem*>::iterator it = m_loop_list.begin(); it != m_loop_list.end(); it++) {
-        TimerItem* pItem = *it;
-        pItem->callback(pItem->user_data, NETLIB_MSG_LOOP, 0, NULL);
-    }
+	for (list<TimerItem*>::iterator it = m_loop_list.begin(); it != m_loop_list.end(); it++) {
+		TimerItem* pItem = *it;
+		pItem->callback(pItem->user_data, NETLIB_MSG_LOOP, 0, NULL);
+	}
 }
 
 CEventDispatch* CEventDispatch::Instance()
@@ -128,7 +128,7 @@ void CEventDispatch::AddEvent(SOCKET fd, uint8_t socket_event)
 	{
 		FD_SET(fd, &m_read_set);
 	}
-		
+
 	if ((socket_event & SOCKET_WRITE) != 0)
 	{
 		FD_SET(fd, &m_write_set);
@@ -167,14 +167,14 @@ void CEventDispatch::StartDispatch(uint32_t wait_timeout)
 	timeout.tv_sec = 0;
 	timeout.tv_usec = wait_timeout * 1000;	// 10 millisecond
 
-    if(running)
-        return;
-    running = true;
-    
-    while (running)
+	if(running)
+		return;
+	running = true;
+
+	while (running)
 	{
 		_CheckTimer();
-        _CheckLoop();
+		_CheckLoop();
 
 		if (!m_read_set.fd_count && !m_write_set.fd_count && !m_excep_set.fd_count)
 		{
@@ -243,7 +243,7 @@ void CEventDispatch::StartDispatch(uint32_t wait_timeout)
 
 void CEventDispatch::StopDispatch()
 {
-    running = false;
+	running = false;
 }
 
 #elif __APPLE__
@@ -290,11 +290,11 @@ void CEventDispatch::StartDispatch(uint32_t wait_timeout)
 	timeout.tv_sec = 0;
 	timeout.tv_nsec = wait_timeout * 1000000;
 
-    if(running)
-        return;
-    running = true;
-    
-    while (running)
+	if(running)
+		return;
+	running = true;
+
+	while (running)
 	{
 		nfds = kevent(m_kqfd, NULL, 0, events, 1024, &timeout);
 
@@ -321,13 +321,13 @@ void CEventDispatch::StartDispatch(uint32_t wait_timeout)
 		}
 
 		_CheckTimer();
-        _CheckLoop();
+		_CheckLoop();
 	}
 }
 
 void CEventDispatch::StopDispatch()
 {
-    running = false;
+	running = false;
 }
 
 #else
@@ -356,10 +356,10 @@ void CEventDispatch::StartDispatch(uint32_t wait_timeout)
 	struct epoll_event events[1024];
 	int nfds = 0;
 
-    if(running)
-        return;
-    running = true;
-    
+	if(running)
+		return;
+	running = true;
+
 	while (running)
 	{
 		nfds = epoll_wait(m_epfd, events, 1024, wait_timeout);
@@ -369,16 +369,16 @@ void CEventDispatch::StartDispatch(uint32_t wait_timeout)
 			CBaseSocket* pSocket = FindBaseSocket(ev_fd);
 			if (!pSocket)
 				continue;
-            
-            //Commit by zhfu @2015-02-28
-            #ifdef EPOLLRDHUP
-            if (events[i].events & EPOLLRDHUP)
-            {
-                //log("On Peer Close, socket=%d, ev_fd);
-                pSocket->OnClose();
-            }
-            #endif
-            // Commit End
+
+			//Commit by zhfu @2015-02-28
+#ifdef EPOLLRDHUP
+			if (events[i].events & EPOLLRDHUP)
+			{
+				//log("On Peer Close, socket=%d, ev_fd);
+				pSocket->OnClose();
+			}
+#endif
+			// Commit End
 
 			if (events[i].events & EPOLLIN)
 			{
@@ -402,13 +402,13 @@ void CEventDispatch::StartDispatch(uint32_t wait_timeout)
 		}
 
 		_CheckTimer();
-        _CheckLoop();
+		_CheckLoop();
 	}
 }
 
 void CEventDispatch::StopDispatch()
 {
-    running = false;
+	running = false;
 }
 
 
