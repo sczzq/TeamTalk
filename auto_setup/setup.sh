@@ -279,6 +279,7 @@ build_php() {
 }
 
 check_im_web() {
+	# copy web-project from root directory to $IM_WEB
 	cd $IM_WEB
 	chmod +x setup.sh
 	./setup.sh check
@@ -303,6 +304,7 @@ build_im_web() {
 }
 
 check_im_server() {
+	# copy im-server project from server directory to $IM_SERVER.
 	cd $IM_SERVER
 	chmod +x setup.sh
 	./setup.sh check
@@ -406,16 +408,16 @@ check_all() {
 	fi
 
 	#im_web
-    check_module $IM_WEB $IM_WEB_SETUP_BEGIN $IM_WEB_SETUP_SUCCESS
-    if [ $? -eq 1 ]; then
-    	exit 1
-    fi
+	check_module $IM_WEB $IM_WEB_SETUP_BEGIN $IM_WEB_SETUP_SUCCESS
+	if [ $? -eq 1 ]; then
+		exit 1
+	fi
 
 	#im_server
-    check_module $IM_SERVER $IM_SERVER_SETUP_BEGIN $IM_SERVER_SETUP_SUCCESS
-    if [ $? -eq 1 ]; then
-    	exit 1
-    fi
+	check_module $IM_SERVER $IM_SERVER_SETUP_BEGIN $IM_SERVER_SETUP_SUCCESS
+	if [ $? -eq 1 ]; then
+		exit 1
+	fi
 	
 	echo "Check TeamTalk successed, and you can install TeamTalk now."
 }
@@ -484,16 +486,16 @@ build_all() {
 	fi
 
 	#im_web
-    build_module $IM_WEB $IM_WEB_SETUP_BEGIN $IM_WEB_SETUP_SUCCESS
-    if [ $? -eq 1 ]; then
-    	exit 1
-    fi
+	build_module $IM_WEB $IM_WEB_SETUP_BEGIN $IM_WEB_SETUP_SUCCESS
+	if [ $? -eq 1 ]; then
+		exit 1
+	fi
 
 	#im_server
-    build_module $IM_SERVER $IM_SERVER_SETUP_BEGIN $IM_SERVER_SETUP_SUCCESS
-    if [ $? -eq 1 ]; then
-    	exit 1
-    fi
+	build_module $IM_SERVER $IM_SERVER_SETUP_BEGIN $IM_SERVER_SETUP_SUCCESS
+	if [ $? -eq 1 ]; then
+		exit 1
+	fi
 }
 
 print_help() {
