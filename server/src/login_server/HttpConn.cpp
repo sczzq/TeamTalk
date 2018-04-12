@@ -95,12 +95,12 @@ CHttpConn::CHttpConn()
 		m_conn_handle = ++g_conn_handle_generator;
 	}
 
-	//log("CHttpConn, handle=%u\n", m_conn_handle);
+	log("CHttpConn, handle=%u\n", m_conn_handle);
 }
 
 CHttpConn::~CHttpConn()
 {
-	//log("~CHttpConn, handle=%u\n", m_conn_handle);
+	log("~CHttpConn, handle=%u\n", m_conn_handle);
 }
 
 int CHttpConn::Send(void* data, int len)
@@ -121,7 +121,7 @@ int CHttpConn::Send(void* data, int len)
 	{
 		m_out_buf.Write((char*)data + ret, len - ret);
 		m_busy = true;
-		//log("not send all, remain=%d\n", m_out_buf.GetWriteOffset());
+		log("not send all, remain=%d\n", m_out_buf.GetWriteOffset());
 	}
 	else
 	{
@@ -193,6 +193,8 @@ void CHttpConn::OnRead()
 		string url =  m_cHttpParser.GetUrl();
 		if (strncmp(url.c_str(), "/msg_server", 11) == 0) {
 			string content = m_cHttpParser.GetBodyContent();
+			log("url---%s---", url.c_str());
+			log("content---%s---", content.c_str());
 			_HandleMsgServRequest(url, content);
 		} else {
 			log("url unknown, url=%s ", url.c_str());
@@ -231,6 +233,7 @@ void CHttpConn::OnClose()
 	Close();
 }
 
+// close peer if TIMEOUT.
 void CHttpConn::OnTimer(uint64_t curr_tick)
 {
 	if (curr_tick > m_last_recv_tick + HTTP_CONN_TIMEOUT) {

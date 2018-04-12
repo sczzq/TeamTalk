@@ -15,8 +15,13 @@
 IpParser* pIpParser = NULL;
 string strMsfsUrl;
 string strDiscovery;//发现获取地址
+
+// this callback will be replaced by imconn_callback() in CLoginConn::OnConnect2()
+// this callback will be called when deliverying read-event to connect.
+// this callback will be replaced by imconn_callback() in CLoginConn::OnConnect2() after connected.
 void client_callback(void* callback_data, uint8_t msg, uint32_t handle, void* pParam)
 {
+	log("client come in");
 	if (msg == NETLIB_MSG_CONNECT)
 	{
 		CLoginConn* pConn = new CLoginConn();
@@ -28,7 +33,7 @@ void client_callback(void* callback_data, uint8_t msg, uint32_t handle, void* pP
 	}
 }
 
-// this callback will be replaced by imconn_callback() in OnConnect()
+// this callback will be replaced by imconn_callback() in CLoginConn::OnConnect2()
 void msg_serv_callback(void* callback_data, uint8_t msg, uint32_t handle, void* pParam)
 {
 	log("msg_server come in");
@@ -47,6 +52,7 @@ void msg_serv_callback(void* callback_data, uint8_t msg, uint32_t handle, void* 
 
 void http_callback(void* callback_data, uint8_t msg, uint32_t handle, void* pParam)
 {
+	log("http come in");
 	if (msg == NETLIB_MSG_CONNECT)
 	{
 		CHttpConn* pConn = new CHttpConn();
@@ -120,12 +126,16 @@ int main(int argc, char* argv[])
 	}
 
 
-	printf("server start listen on:\nFor client %s:%d\nFor MsgServer: %s:%d\nFor http:%s:%d\n",
+	log("server start listen on:\nFor client %s:%d\nFor MsgServer: %s:%d\nFor http:%s:%d\n",
 			client_listen_ip, client_port, msg_server_listen_ip, msg_server_port, http_listen_ip, http_port);
+	// Add Timer.
+	// to see CLoginConn::OnTimer().
 	init_login_conn();
+	// Add Timer.
+	// to see CHttpConn::OnTimer().
 	init_http_conn();
 
-	printf("now enter the event loop...\n");
+	log("now enter the event loop...\n");
 
 	writePid();
 

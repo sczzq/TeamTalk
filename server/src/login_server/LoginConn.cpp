@@ -16,8 +16,8 @@ static ConnMap_t g_msg_serv_conn_map;
 static uint32_t g_total_online_user_cnt = 0;	// 并发在线总人数
 map<uint32_t, msg_serv_info_t*> g_msg_serv_info;
 
-// send heartbeat to all connected peer.
-// peer maybe msg_server, client.
+// Execute Timer Task.
+// to see CLoginConn::OnTimer().
 void login_conn_timer_callback(void* callback_data, uint8_t msg, uint32_t handle, void* pParam)
 {
 	uint64_t cur_time = get_tick_count();
@@ -97,8 +97,9 @@ void CLoginConn::OnClose()
 	Close();
 }
 
-// Send heartbeat message to its peer.
-// its peer is message_server or client.
+// Send heartbeat message to msg_server.
+// close client connection if TIMEOUT.
+// close msg_server connection if TIMEOUT.
 void CLoginConn::OnTimer(uint64_t curr_tick)
 {
 	if (m_conn_type == LOGIN_CONN_TYPE_CLIENT) {
@@ -208,7 +209,7 @@ void CLoginConn::_HandleMsgServRequest(CImPdu* pPdu)
 		return;
 	}
 
-	// return a message server with minimum concurrent connection count
+	// return a message server which has minimum concurrent connection count
 	msg_serv_info_t* pMsgServInfo;
 	uint32_t min_user_cnt = (uint32_t)-1;
 	map<uint32_t, msg_serv_info_t*>::iterator it_min_conn = g_msg_serv_info.end(),it;
@@ -241,9 +242,10 @@ void CLoginConn::_HandleMsgServRequest(CImPdu* pPdu)
 		msg.set_prior_ip(it_min_conn->second->ip_addr1);
 		msg.set_backip_ip(it_min_conn->second->ip_addr2);
 		msg.set_port(it_min_conn->second->port);
-//		log(std::string("msg_server prior ip:") + it_min_conn->second->ip_addr1
-//			+ std::string(", backup ip:") + it_min_conn->second->ip_addr2
-//			+ std::string(", port:") + it_min_conn->second->port);
+		log("msg_server prior ip:%s, backup ip:%s, port:%d"
+			, it_min_conn->second->ip_addr1.c_str()
+			, it_min_conn->second->ip_addr2.c_str()
+			, it_min_conn->second->port);
 		CImPdu pdu;
 		pdu.SetPBMsg(&msg);
 		pdu.SetServiceId(SID_LOGIN);
