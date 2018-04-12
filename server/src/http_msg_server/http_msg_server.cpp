@@ -40,20 +40,20 @@ int main(int argc, char* argv[])
 		printf("Server Build: %s %s\n", __DATE__, __TIME__);
 		return 0;
 	}
-    
+
 	signal(SIGPIPE, SIG_IGN);
 	srand(time(NULL));
-    
+
 	log("MsgServer max files can open: %d ", getdtablesize());
-    
+
 	CConfigFileReader config_file("httpmsgserver.conf");
-    
+
 	char* listen_ip = config_file.GetConfigName("ListenIP");
 	char* str_listen_port = config_file.GetConfigName("ListenPort");
-    
+
 	uint32_t db_server_count = 0;
 	serv_info_t* db_server_list = read_server_config(&config_file, "DBServerIP", "DBServerPort", db_server_count);
-    
+
 	uint32_t route_server_count = 0;
 	serv_info_t* route_server_list = read_server_config(&config_file, "RouteServerIP", "RouteServerPort", route_server_count);
 
@@ -79,14 +79,14 @@ int main(int argc, char* argv[])
 		log("config file miss, exit... ");
 		return -1;
 	}
-    
+
 	uint16_t listen_port = atoi(str_listen_port);
-    
+
 	int ret = netlib_init();
-    
+
 	if (ret == NETLIB_ERROR)
 		return ret;
-    
+
 	CStrExplode listen_ip_list(listen_ip, ';');
 	for (uint32_t i = 0; i < listen_ip_list.GetItemCnt(); i++) {
 		ret = netlib_listen(listen_ip_list.GetItem(i), listen_port, http_callback, NULL);
@@ -95,9 +95,9 @@ int main(int argc, char* argv[])
 	}
 
 	printf("server start listen on: %s:%d\n", listen_ip, listen_port);
-    
+
 	init_http_conn();
-    
+
 	if (db_server_count > 0) {
 		HTTP::init_db_serv_conn(db_server_list2, db_server_count2, concurrent_db_conn_cnt);
 	}
@@ -107,10 +107,10 @@ int main(int argc, char* argv[])
 	}
 
 	printf("now enter the event loop...\n");
-    
-    writePid();
+
+	writePid();
 
 	netlib_eventloop();
-    
+
 	return 0;
 }

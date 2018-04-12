@@ -241,9 +241,9 @@ void CLoginConn::_HandleMsgServRequest(CImPdu* pPdu)
 		msg.set_prior_ip(it_min_conn->second->ip_addr1);
 		msg.set_backip_ip(it_min_conn->second->ip_addr2);
 		msg.set_port(it_min_conn->second->port);
-		log(std::string("msg_server prior ip:") + it_min_conn->second->ip_addr1
-			+ std::string(", backup ip:") + it_min_conn->second->ip_addr2
-			+ std::string(", port:") + it_min_conn->second->port);
+//		log(std::string("msg_server prior ip:") + it_min_conn->second->ip_addr1
+//			+ std::string(", backup ip:") + it_min_conn->second->ip_addr2
+//			+ std::string(", port:") + it_min_conn->second->port);
 		CImPdu pdu;
 		pdu.SetPBMsg(&msg);
 		pdu.SetServiceId(SID_LOGIN);

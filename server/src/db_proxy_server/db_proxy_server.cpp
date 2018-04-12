@@ -61,40 +61,40 @@ int main(int argc, char* argv[])
 		log("DBManager init failed");
 		return -1;
 	}
-puts("db init success");
+	puts("db init success");
 	// 主线程初始化单例，不然在工作线程可能会出现多次初始化
 	if (!CAudioModel::getInstance()) {
 		return -1;
 	}
-    
-    if (!CGroupMessageModel::getInstance()) {
-        return -1;
-    }
-    
-    if (!CGroupModel::getInstance()) {
-        return -1;
-    }
-    
-    if (!CMessageModel::getInstance()) {
-        return -1;
-    }
+
+	if (!CGroupMessageModel::getInstance()) {
+		return -1;
+	}
+
+	if (!CGroupModel::getInstance()) {
+		return -1;
+	}
+
+	if (!CMessageModel::getInstance()) {
+		return -1;
+	}
 
 	if (!CSessionModel::getInstance()) {
 		return -1;
 	}
-    
-    if(!CRelationModel::getInstance())
-    {
-        return -1;
-    }
-    
-    if (!CUserModel::getInstance()) {
-        return -1;
-    }
-    
-    if (!CFileModel::getInstance()) {
-        return -1;
-    }
+
+	if(!CRelationModel::getInstance())
+	{
+		return -1;
+	}
+
+	if (!CUserModel::getInstance()) {
+		return -1;
+	}
+
+	if (!CFileModel::getInstance()) {
+		return -1;
+	}
 
 
 	CConfigFileReader config_file("dbproxyserver.conf");
@@ -102,50 +102,50 @@ puts("db init success");
 	char* listen_ip = config_file.GetConfigName("ListenIP");
 	char* str_listen_port = config_file.GetConfigName("ListenPort");
 	char* str_thread_num = config_file.GetConfigName("ThreadNum");
-    char* str_file_site = config_file.GetConfigName("MsfsSite");
-    char* str_aes_key = config_file.GetConfigName("aesKey");
+	char* str_file_site = config_file.GetConfigName("MsfsSite");
+	char* str_aes_key = config_file.GetConfigName("aesKey");
 
 	if (!listen_ip || !str_listen_port || !str_thread_num || !str_file_site || !str_aes_key) {
 		log("missing ListenIP/ListenPort/ThreadNum/MsfsSite/aesKey, exit...");
 		return -1;
 	}
-    
-    if(strlen(str_aes_key) != 32)
-    {
-        log("aes key is invalied");
-        return -2;
-    }
-    string strAesKey(str_aes_key, 32);
-    CAes cAes = CAes(strAesKey);
-    string strAudio = "[语音]";
-    char* pAudioEnc;
-    uint32_t nOutLen;
-    if(cAes.Encrypt(strAudio.c_str(), strAudio.length(), &pAudioEnc, nOutLen) == 0)
-    {
-        strAudioEnc.clear();
-        strAudioEnc.append(pAudioEnc, nOutLen);
-        cAes.Free(pAudioEnc);
-    }
+
+	if(strlen(str_aes_key) != 32)
+	{
+		log("aes key is invalied");
+		return -2;
+	}
+	string strAesKey(str_aes_key, 32);
+	CAes cAes = CAes(strAesKey);
+	string strAudio = "[语音]";
+	char* pAudioEnc;
+	uint32_t nOutLen;
+	if(cAes.Encrypt(strAudio.c_str(), strAudio.length(), &pAudioEnc, nOutLen) == 0)
+	{
+		strAudioEnc.clear();
+		strAudioEnc.append(pAudioEnc, nOutLen);
+		cAes.Free(pAudioEnc);
+	}
 
 	uint16_t listen_port = atoi(str_listen_port);
 	uint32_t thread_num = atoi(str_thread_num);
-    
-    string strFileSite(str_file_site);
-    CAudioModel::getInstance()->setUrl(strFileSite);
+
+	string strFileSite(str_file_site);
+	CAudioModel::getInstance()->setUrl(strFileSite);
 
 	int ret = netlib_init();
 
 	if (ret == NETLIB_ERROR)
 		return ret;
-    
-    /// yunfan add 2014.9.28
-    // for 603 push
-    curl_global_init(CURL_GLOBAL_ALL);
-    /// yunfan add end
+
+	/// yunfan add 2014.9.28
+	// for 603 push
+	curl_global_init(CURL_GLOBAL_ALL);
+	/// yunfan add end
 
 	init_proxy_conn(thread_num);
-    CSyncCenter::getInstance()->init();
-    CSyncCenter::getInstance()->startSync();
+	CSyncCenter::getInstance()->init();
+	CSyncCenter::getInstance()->startSync();
 
 	CStrExplode listen_ip_list(listen_ip, ';');
 	for (uint32_t i = 0; i < listen_ip_list.GetItemCnt(); i++) {
@@ -154,9 +154,9 @@ puts("db init success");
 			return ret;
 	}
 
-	printf("server start listen on: %s:%d\n", listen_ip,  listen_port);
-	printf("now enter the event loop...\n");
-    writePid();
+	log("server start listen on: %s:%d\n", listen_ip,  listen_port);
+	log("now enter the event loop...\n");
+	writePid();
 	netlib_eventloop(10);
 
 	return 0;

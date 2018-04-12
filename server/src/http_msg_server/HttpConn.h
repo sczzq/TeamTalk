@@ -17,47 +17,47 @@
 #define READ_BUF_SIZE	2048
 
 enum {
-    CONN_STATE_IDLE,
-    CONN_STATE_CONNECTED,
-    CONN_STATE_OPEN,
-    CONN_STATE_CLOSED,
+	CONN_STATE_IDLE,
+	CONN_STATE_CONNECTED,
+	CONN_STATE_OPEN,
+	CONN_STATE_CLOSED,
 };
 
 class CHttpConn : public CRefObject
 {
-public:
-	CHttpConn();
-	virtual ~CHttpConn();
+	public:
+		CHttpConn();
+		virtual ~CHttpConn();
 
-	uint32_t GetConnHandle() { return m_conn_handle; }
-	char* GetPeerIP() { return (char*)m_peer_ip.c_str(); }
+		uint32_t GetConnHandle() { return m_conn_handle; }
+		char* GetPeerIP() { return (char*)m_peer_ip.c_str(); }
 
-	int Send(void* data, int len);
+		int Send(void* data, int len);
 
-    void Close();
-    void OnConnect(net_handle_t handle);
-    void OnRead();
-    void OnWrite();
-    void OnClose();
-    void OnTimer(uint64_t curr_tick);
-    
-    virtual void OnWriteCompelete();
+		void Close();
+		void OnConnect(net_handle_t handle);
+		void OnRead();
+		void OnWrite();
+		void OnClose();
+		void OnTimer(uint64_t curr_tick);
 
-protected:
-	net_handle_t	m_sock_handle;
-	uint32_t		m_conn_handle;
-	bool			m_busy;
+		virtual void OnWriteCompelete();
 
-    uint32_t        m_state;
-	std::string		m_peer_ip;
-	uint16_t		m_peer_port;
-	CSimpleBuffer	m_in_buf;
-	CSimpleBuffer	m_out_buf;
+	protected:
+		net_handle_t	m_sock_handle;
+		uint32_t		m_conn_handle;
+		bool			m_busy;
 
-	uint64_t		m_last_send_tick;
-	uint64_t		m_last_recv_tick;
-    
-    CHttpParserWrapper m_HttpParser;
+		uint32_t        m_state;
+		std::string		m_peer_ip;
+		uint16_t		m_peer_port;
+		CSimpleBuffer	m_in_buf;
+		CSimpleBuffer	m_out_buf;
+
+		uint64_t		m_last_send_tick;
+		uint64_t		m_last_recv_tick;
+
+		CHttpParserWrapper m_HttpParser;
 };
 
 typedef hash_map<uint32_t, CHttpConn*> HttpConnMap_t;

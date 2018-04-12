@@ -16,13 +16,13 @@ static uint32_t g_conn_handle_generator = 0;
 
 CHttpConn* FindHttpConnByHandle(uint32_t conn_handle)
 {
-    CHttpConn* pConn = NULL;
-    HttpConnMap_t::iterator it = g_http_conn_map.find(conn_handle);
-    if (it != g_http_conn_map.end()) {
-        pConn = it->second;
-    }
+	CHttpConn* pConn = NULL;
+	HttpConnMap_t::iterator it = g_http_conn_map.find(conn_handle);
+	if (it != g_http_conn_map.end()) {
+		pConn = it->second;
+	}
 
-    return pConn;
+	return pConn;
 }
 
 void httpconn_callback(void* callback_data, uint8_t msg, uint32_t handle, uint32_t uParam, void* pParam)
@@ -32,25 +32,25 @@ void httpconn_callback(void* callback_data, uint8_t msg, uint32_t handle, uint32
 
 	// convert void* to uint32_t, oops
 	uint32_t conn_handle = *((uint32_t*)(&callback_data));
-    CHttpConn* pConn = FindHttpConnByHandle(conn_handle);
-    if (!pConn) {
-        return;
-    }
+	CHttpConn* pConn = FindHttpConnByHandle(conn_handle);
+	if (!pConn) {
+		return;
+	}
 
 	switch (msg)
 	{
-	case NETLIB_MSG_READ:
-		pConn->OnRead();
-		break;
-	case NETLIB_MSG_WRITE:
-		pConn->OnWrite();
-		break;
-	case NETLIB_MSG_CLOSE:
-		pConn->OnClose();
-		break;
-	default:
-		log("!!!httpconn_callback error msg: %d ", msg);
-		break;
+		case NETLIB_MSG_READ:
+			pConn->OnRead();
+			break;
+		case NETLIB_MSG_WRITE:
+			pConn->OnWrite();
+			break;
+		case NETLIB_MSG_CLOSE:
+			pConn->OnClose();
+			break;
+		default:
+			log("!!!httpconn_callback error msg: %d ", msg);
+			break;
 	}
 }
 
@@ -79,8 +79,8 @@ CHttpConn::CHttpConn()
 {
 	m_busy = false;
 	m_sock_handle = NETLIB_INVALID_HANDLE;
-    m_state = CONN_STATE_IDLE;
-    
+	m_state = CONN_STATE_IDLE;
+
 	m_last_send_tick = m_last_recv_tick = get_tick_count();
 	m_conn_handle = ++g_conn_handle_generator;
 	if (m_conn_handle == 0) {
@@ -115,36 +115,36 @@ int CHttpConn::Send(void* data, int len)
 		m_busy = true;
 		//log("not send all, remain=%d ", m_out_buf.GetWriteOffset());
 	}
-    else
-    {
-        OnWriteCompelete();
-    }
+	else
+	{
+		OnWriteCompelete();
+	}
 
 	return len;
 }
 
 void CHttpConn::Close()
 {
-    if (m_state != CONN_STATE_CLOSED) {
-        m_state = CONN_STATE_CLOSED;
-        
-        g_http_conn_map.erase(m_conn_handle);
-        netlib_close(m_sock_handle);
-        
-        ReleaseRef();
-    }
+	if (m_state != CONN_STATE_CLOSED) {
+		m_state = CONN_STATE_CLOSED;
+
+		g_http_conn_map.erase(m_conn_handle);
+		netlib_close(m_sock_handle);
+
+		ReleaseRef();
+	}
 }
 
 void CHttpConn::OnConnect(net_handle_t handle)
 {
-    printf("OnConnect, handle=%d\n", handle);
-    m_sock_handle = handle;
-    m_state = CONN_STATE_CONNECTED;
-    g_http_conn_map.insert(make_pair(m_conn_handle, this));
-    
-    netlib_option(handle, NETLIB_OPT_SET_CALLBACK, (void*)httpconn_callback);
-    netlib_option(handle, NETLIB_OPT_SET_CALLBACK_DATA, reinterpret_cast<void *>(m_conn_handle) );
-    netlib_option(handle, NETLIB_OPT_GET_REMOTE_IP, (void*)&m_peer_ip);
+	printf("OnConnect, handle=%d\n", handle);
+	m_sock_handle = handle;
+	m_state = CONN_STATE_CONNECTED;
+	g_http_conn_map.insert(make_pair(m_conn_handle, this));
+
+	netlib_option(handle, NETLIB_OPT_SET_CALLBACK, (void*)httpconn_callback);
+	netlib_option(handle, NETLIB_OPT_SET_CALLBACK_DATA, reinterpret_cast<void *>(m_conn_handle) );
+	netlib_option(handle, NETLIB_OPT_GET_REMOTE_IP, (void*)&m_peer_ip);
 }
 
 void CHttpConn::OnRead()
@@ -207,13 +207,13 @@ void CHttpConn::OnWrite()
 	else
 	{
 		m_busy = false;
-        OnWriteCompelete();
+		OnWriteCompelete();
 	}
 }
 
 void CHttpConn::OnClose()
 {
-    Close();
+	Close();
 }
 
 void CHttpConn::OnTimer(uint64_t curr_tick)
@@ -226,6 +226,6 @@ void CHttpConn::OnTimer(uint64_t curr_tick)
 
 void CHttpConn::OnWriteCompelete()
 {
-    Close();
+	Close();
 }
 
