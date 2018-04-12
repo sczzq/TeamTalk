@@ -7,8 +7,8 @@
 
 #include "imconn.h"
 
-//static uint64_t g_send_pkt_cnt = 0;		// 发送数据包总数
-//static uint64_t g_recv_pkt_cnt = 0;		// 接收数据包总数
+static uint64_t g_send_pkt_cnt = 0;		// 发送数据包总数
+static uint64_t g_recv_pkt_cnt = 0;		// 接收数据包总数
 
 static CImConn* FindImConn(ConnMap_t* imconn_map, net_handle_t handle)
 {
@@ -36,7 +36,7 @@ void imconn_callback(void* callback_data, uint8_t msg, uint32_t handle, void* pP
 	if (!pConn)
 		return;
 
-	//log("msg=%d, handle=%d ", msg, handle);
+//	log("msg=%d, handle=%d ", msg, handle);
 
 	switch (msg)
 	{
@@ -63,7 +63,7 @@ void imconn_callback(void* callback_data, uint8_t msg, uint32_t handle, void* pP
 //////////////////////////
 CImConn::CImConn()
 {
-	//log("CImConn::CImConn ");
+//	log("CImConn::CImConn ");
 
 	m_busy = false;
 	m_handle = NETLIB_INVALID_HANDLE;
@@ -74,13 +74,13 @@ CImConn::CImConn()
 
 CImConn::~CImConn()
 {
-	//log("CImConn::~CImConn, handle=%d ", m_handle);
+//	log("CImConn::~CImConn, handle=%d ", m_handle);
 }
 
 int CImConn::Send(void* data, int len)
 {
 	m_last_send_tick = get_tick_count();
-	//	++g_send_pkt_cnt;
+	++g_send_pkt_cnt;
 
 	if (m_busy)
 	{
@@ -150,7 +150,7 @@ void CImConn::OnRead()
 			m_in_buf.Read(NULL, pdu_len);
 			delete pPdu;
 			pPdu = NULL;
-			//			++g_recv_pkt_cnt;
+			++g_recv_pkt_cnt;
 		}
 	} catch (CPduException& ex) {
 		log("!!!catch exception, sid=%u, cid=%u, err_code=%u, err_msg=%s, close the connection ",
@@ -187,7 +187,7 @@ void CImConn::OnWrite()
 		m_busy = false;
 	}
 
-	log("onWrite, remain=%d ", m_out_buf.GetWriteOffset());
+//	log("onWrite, remain=%d ", m_out_buf.GetWriteOffset());
 }
 
 
