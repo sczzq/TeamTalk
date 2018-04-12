@@ -11,12 +11,13 @@ function restart() {
 	fi
 
 	if [ -e server.pid  ]; then
-		pid=`cat server.pid`
+#		pid=`cat server.pid`
+		pid=`pidof $1`
 		echo "kill pid=$pid"
 		kill $pid
 		while true
 		do
-			oldpid=`ps -ef|grep $1|grep $pid`;
+			oldpid=`ps -ef|grep $1|grep -o $pid`;
 			if [ $oldpid"x" == $pid"x" ]; then
 				echo $oldpid" "$pid
 				sleep 1
