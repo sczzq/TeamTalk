@@ -1,7 +1,7 @@
 #基本
 CC = g++
 CFLAGS=-Wall -Wno-deprecated -g -std=c++11
-LDFLAGS= -lbase -lpthread -lprotobuf-lite -lslog -lcurl
+LDFLAGS= -lbase -lpthread -lprotobuf-lite -lslog -lcurl -lsecurity
 ifeq ($(shell uname), Darwin)
 #CFLAGS := $(CFLAGS) -Os -framework Cocoa
 LDFLAGS := $(LDFLAGS) -Os -framework Cocoa
@@ -23,23 +23,24 @@ BIN=test
 #源文件目录
 SrcDir= .
 #头文件目录
-IncDir= . ../base ../base/jsoncpp ../base/pb/protocol ../base/pb
+IncDir= . ../base ../base/jsoncpp ../base/pb/protocol ../base/pb ../libsecurity/include/
 #连接库目录
-LibDir= ../base/ ../base/pb/lib/mac/ ../base/slog/lib/
+LibDir= ../base/ ../base/pb/lib/mac/ ../base/slog/lib/ ../protobuf/lib/ ../libsecurity/src
 
 SRCS=$(foreach dir,$(SrcDir),$(wildcard $(dir)/*.cpp))
 INCS=$(foreach dir,$(IncDir),$(addprefix -I,$(dir)))
 LINKS=$(foreach dir,$(LibDir),$(addprefix -L,$(dir)))
-CFLAGS := $(CFLAGS) $(INCS)
+CFLAGS := $(CFLAGS) $(INCS) 
 LDFLAGS:= $(LINKS) $(LDFLAGS)
 
 #OBJS = $(SRCS:%.cpp=%.o) playsound.o
+OBJS = $(SRCS:%.cpp=%.o)
 .PHONY:all clean
 
 all:$(BIN)
 #$(BIN):$(OBJS) playsound.o
 $(BIN):$(OBJS)
-	$(CC) -o $(BIN) $(OBJS) $(LDFLAGS)
+	$(CC) -o $(BIN) $(OBJS) $(LDFLAGS) -Wl,-rpath=../protobuf/lib/ -Wl,-rpath=../base/slog/lib/ 
 	@echo " OK!\tComplie $@ "
 
 %.o:%.cpp
