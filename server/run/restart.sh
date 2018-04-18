@@ -10,9 +10,10 @@ function restart() {
 		return
 	fi
 
-	if [ -e server.pid  ]; then
-#		pid=`cat server.pid`
-		pid=`pidof $1`
+#	pid=`cat server.pid`
+#	do not use server.pid to detect process status.
+	pid=`pidof $1`
+	if [ $pid'x' != 'x' ]; then
 		echo "kill pid=$pid"
 		kill $pid
 		while true
@@ -26,7 +27,7 @@ function restart() {
 			fi
 		done
 		../daeml ./$1
-	else 
+	else
 		../daeml ./$1
 	fi
 }
