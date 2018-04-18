@@ -23,7 +23,7 @@
 using namespace std;
 
 #define MAX_LINE_LEN	1024
-string g_login_domain = "http://access.teamtalk.im:8080";
+string g_login_domain = "192.168.0.106:8080";
 string g_cmd_string[10];
 int g_cmd_num;
 CClient* g_pClient = NULL;
@@ -53,80 +53,80 @@ void split_cmd(char* buf)
 void print_help()
 {
 	printf("Usage:\n");
-    printf("login user_name user_pass\n");
-    /*
-	printf("connect serv_ip serv_port user_name user_pass\n");
-    printf("getuserinfo\n");
-    printf("send toId msg\n");
-    printf("unreadcnt\n");
-     */
+	printf("login user_name user_pass\n");
+	/*
+	   printf("connect serv_ip serv_port user_name user_pass\n");
+	   printf("getuserinfo\n");
+	   printf("send toId msg\n");
+	   printf("unreadcnt\n");
+	   */
 	printf("close\n");
 	printf("quit\n");
 }
 
 void doLogin(const string& strName, const string& strPass)
 {
-    try
-    {
-        g_pClient = new CClient(strName, strPass);
-    }
-    catch(...)
-    {
-        printf("get error while alloc memory\n");
-        PROMPTION;
-        return;
-    }
-    g_pClient->connect();
+	try
+	{
+		g_pClient = new CClient(strName, strPass);
+	}
+	catch(...)
+	{
+		printf("get error while alloc memory\n");
+		PROMPTION;
+		return;
+	}
+	g_pClient->connect();
 }
 void exec_cmd()
 {
 	if (g_cmd_num == 0) {
 		return;
 	}
-    
-    if(g_cmd_string[0] == "login")
-    {
-        if(g_cmd_num == 3)
-        {
-            doLogin(g_cmd_string[1], g_cmd_string[2]);
-        }
-        else
-        {
-            print_help();
-        }
-    }
-    else if (strcmp(g_cmd_string[0].c_str(), "close") == 0) {
-        g_pClient->close();
-    }
-    else if (strcmp(g_cmd_string[0].c_str(), "quit") == 0) {
+
+	if(g_cmd_string[0] == "login")
+	{
+		if(g_cmd_num == 3)
+		{
+			doLogin(g_cmd_string[1], g_cmd_string[2]);
+		}
+		else
+		{
+			print_help();
+		}
+	}
+	else if (strcmp(g_cmd_string[0].c_str(), "close") == 0) {
+		g_pClient->close();
+	}
+	else if (strcmp(g_cmd_string[0].c_str(), "quit") == 0) {
 		exit(0);
 
-    }
-    else if(strcmp(g_cmd_string[0].c_str(), "list") == 0)
-    {
-        printf("+---------------------+\n");
-        printf("|        用户名        |\n");
-        printf("+---------------------+\n");
-        CMapNick2User_t mapUser = g_pClient->getNick2UserMap();
-        auto it = mapUser.begin();
-        for(;it!=mapUser.end();++it)
-        {
-            uint32_t nLen = 21 - it->first.length();
-            printf("|");
-            for(uint32_t i=0; i<nLen/2; ++it)
-            {
-                printf(" ");
-            }
-            printf("%s", it->first.c_str());
-            for(uint32_t i=0; i<nLen/2; ++it)
-            {
-                printf(" ");
-            }
-            printf("|\n");
-            printf("+---------------------+\n");
-        }
-    }
-    else {
+	}
+	else if(strcmp(g_cmd_string[0].c_str(), "list") == 0)
+	{
+		printf("+---------------------+\n");
+		printf("|        用户名        |\n");
+		printf("+---------------------+\n");
+		CMapNick2User_t mapUser = g_pClient->getNick2UserMap();
+		auto it = mapUser.begin();
+		for(;it!=mapUser.end();++it)
+		{
+			uint32_t nLen = 21 - it->first.length();
+			printf("|");
+			for(uint32_t i=0; i<nLen/2; ++it)
+			{
+				printf(" ");
+			}
+			printf("%s", it->first.c_str());
+			for(uint32_t i=0; i<nLen/2; ++it)
+			{
+				printf(" ");
+			}
+			printf("|\n");
+			printf("+---------------------+\n");
+		}
+	}
+	else {
 		print_help();
 	}
 }
@@ -134,35 +134,35 @@ void exec_cmd()
 
 class CmdThread : public CThread
 {
-public:
-	void OnThreadRun()
-	{
-		while (true)
+	public:
+		void OnThreadRun()
 		{
-			fprintf(stderr, "%s", PROMPT);	// print to error will not buffer the printed message
-
-			if (fgets(m_buf, MAX_LINE_LEN - 1, stdin) == NULL)
+			while (true)
 			{
-				fprintf(stderr, "fgets failed: %d\n", errno);
-				continue;
+				fprintf(stderr, "%s", PROMPT);	// print to error will not buffer the printed message
+
+				if (fgets(m_buf, MAX_LINE_LEN - 1, stdin) == NULL)
+				{
+					fprintf(stderr, "fgets failed: %d\n", errno);
+					continue;
+				}
+
+				m_buf[strlen(m_buf) - 1] = '\0';	// remove newline character
+
+				split_cmd(m_buf);
+
+				exec_cmd();
 			}
-
-			m_buf[strlen(m_buf) - 1] = '\0';	// remove newline character
-
-			split_cmd(m_buf);
-
-			exec_cmd();
 		}
-	}
-private:
-	char	m_buf[MAX_LINE_LEN];
+	private:
+		char	m_buf[MAX_LINE_LEN];
 };
 
 CmdThread g_cmd_thread;
 
 int main(int argc, char* argv[])
 {
-//    play("message.wav");
+	//    play("message.wav");
 	g_cmd_thread.StartThread();
 
 	signal(SIGPIPE, SIG_IGN);
@@ -171,7 +171,7 @@ int main(int argc, char* argv[])
 
 	if (ret == NETLIB_ERROR)
 		return ret;
-    
+
 	netlib_eventloop();
 
 	return 0;
