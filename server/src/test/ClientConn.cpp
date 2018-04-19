@@ -12,9 +12,10 @@
 #include "playsound.h"
 #include "Common.h"
 
+static ConnMap_t g_msg_conn_map;
 
-ClientConn::ClientConn():
-	m_bOpen(false)
+ClientConn::ClientConn(IPacketCallback* callback):
+	m_bOpen(false), m_pCallback(callback)
 {
 	m_pSeqAlloctor = CSeqAlloctor::getInstance();
 }
@@ -27,6 +28,13 @@ ClientConn::~ClientConn()
 net_handle_t ClientConn::connect(const string& strIp, uint16_t nPort, const string& strName, const string& strPass)
 {
 	m_handle = netlib_connect(strIp.c_str(), nPort, imconn_callback, NULL);
+	log("%d", m_handle);
+	
+	if(m_handle != NETLIB_INVALID_HANDLE){
+		g_msg_conn_map.insert(make_pair(m_handle, this));
+		netlib_option(m_handle, NETLIB_OPT_SET_CALLBACK_DATA, (void*)&g_msg_conn_map);
+	}
+
 	return  m_handle;
 }
 
@@ -66,8 +74,9 @@ void ClientConn::OnTimer(uint64_t curr_tick)
 }
 
 
-uint32_t ClientConn::login(const string &strName, const string &strPass)
+uint32_t ClientConn::login(const string strName, const string strPass)
 {
+	log("login");
 	CImPdu cPdu;
 	IM::Login::IMLoginReq msg;
 	msg.set_user_name(strName);
@@ -84,7 +93,7 @@ uint32_t ClientConn::login(const string &strName, const string &strPass)
 	return nSeqNo;
 }
 
-uint32_t ClientConn::getUser(uint32_t nUserId, uint32_t nTime)
+uint32_t ClientConn::getAllUser(uint32_t nUserId, uint32_t nTime)
 {
 	CImPdu cPdu;
 	IM::Buddy::IMAllUserReq msg;
@@ -93,6 +102,21 @@ uint32_t ClientConn::getUser(uint32_t nUserId, uint32_t nTime)
 	cPdu.SetPBMsg(&msg);
 	cPdu.SetServiceId(IM::BaseDefine::SID_BUDDY_LIST);
 	cPdu.SetCommandId(IM::BaseDefine::CID_BUDDY_LIST_ALL_USER_REQUEST);
+	uint32_t nSeqNo = m_pSeqAlloctor->getSeq(ALLOCTOR_PACKET);
+	cPdu.SetSeqNum(nSeqNo);
+	SendPdu(&cPdu);
+	return nSeqNo;
+}
+
+uint32_t ClientConn::getAllDepart(uint32_t nUserId, uint32_t nTime)
+{
+	CImPdu cPdu;
+	IM::Buddy::IMDepartmentReq msg;
+	msg.set_user_id(nUserId);
+	msg.set_latest_update_time(nTime);
+	cPdu.SetPBMsg(&msg);
+	cPdu.SetServiceId(IM::BaseDefine::SID_BUDDY_LIST);
+	cPdu.SetCommandId(IM::BaseDefine::CID_BUDDY_LIST_DEPARTMENT_REQUEST);
 	uint32_t nSeqNo = m_pSeqAlloctor->getSeq(ALLOCTOR_PACKET);
 	cPdu.SetSeqNum(nSeqNo);
 	SendPdu(&cPdu);
@@ -204,6 +228,7 @@ void ClientConn::Close()
 {
 	if (m_handle != NETLIB_INVALID_HANDLE) {
 		netlib_close(m_handle);
+		g_msg_conn_map.erase(m_handle);
 	}
 	ReleaseRef();
 }
@@ -219,7 +244,10 @@ void ClientConn::HandlePdu(CImPdu* pPdu)
 			_HandleLoginResponse(pPdu);
 			break;
 		case IM::BaseDefine::CID_BUDDY_LIST_ALL_USER_RESPONSE:
-			_HandleUser(pPdu);
+			_HandleAllUser(pPdu);
+			break;
+		case IM::BaseDefine::CID_BUDDY_LIST_DEPARTMENT_RESPONSE:
+			_HandleDepartmentList(pPdu);
 			break;
 		case IM::BaseDefine::CID_BUDDY_LIST_USER_INFO_RESPONSE:
 			_HandleUserInfo(pPdu);
@@ -239,11 +267,28 @@ void ClientConn::HandlePdu(CImPdu* pPdu)
 		case IM::BaseDefine::CID_MSG_DATA:
 			_HandleMsgData(pPdu);
 			break;
+		case IM::BaseDefine::CID_BUDDY_LIST_STATUS_NOTIFY:
+			_HandleStatusNotify(pPdu);
+			break;
+		case IM::BaseDefine::CID_SWITCH_P2P_CMD:
+			_HandleP2PCmd(pPdu);
+			break;
 		default:
 			log("wrong msg_type=%d\n", pPdu->GetCommandId());
 			break;
 	}
 }
+
+void ClientConn::_HandleStatusNotify(CImPdu* pPdu)
+{
+        IM::Buddy::IMUserStatNotify msg;
+        CHECK_PB_PARSE_MSG(msg.ParseFromArray(pPdu->GetBodyData(), pPdu->GetBodyLength()));
+
+        IM::BaseDefine::UserStat user_stat = msg.user_stat();
+
+        log("user_id=%u, status=%u, ONLINE-1,,OFFILE-2, LEAVE-3", user_stat.user_id(), user_stat.status());
+}
+
 void ClientConn::_HandleLoginResponse(CImPdu* pPdu)
 {
 	IM::Login::IMLoginRes msgResp;
@@ -256,6 +301,12 @@ void ClientConn::_HandleLoginResponse(CImPdu* pPdu)
 		{
 			m_bOpen = true;
 			IM::BaseDefine::UserInfo cUser = msgResp.user_info();
+			log("user_id: %u, user_gender: %u, user_nick_name: %s, avatar_url: %s, department_id: %u, email: %s,"
+				"user_real_name: %s, user_tel: %s, user_domain: %s, status: %u, sign_info: %s",
+				cUser.user_id(), cUser.user_gender(), cUser.user_nick_name().c_str(),
+				cUser.avatar_url().c_str(), cUser.department_id(), cUser.email().c_str(),
+				cUser.user_real_name().c_str(), cUser.user_tel().c_str(), cUser.user_domain().c_str(),
+				cUser.status(), cUser.sign_info().c_str());
 			m_pCallback->onLogin(nSeqNo, nRet, strMsg, &cUser);
 		}
 		else
@@ -269,14 +320,14 @@ void ClientConn::_HandleLoginResponse(CImPdu* pPdu)
 	}
 }
 
-void ClientConn::_HandleUser(CImPdu* pPdu)
+void ClientConn::_HandleAllUser(CImPdu* pPdu)
 {
 	IM::Buddy::IMAllUserRsp msgResp;
 	uint32_t nSeqNo = pPdu->GetSeqNum();
 	if(msgResp.ParseFromArray(pPdu->GetBodyData(), pPdu->GetBodyLength()))
 	{
 		uint32_t userCnt = msgResp.user_list_size();
-		printf("get %d users\n", userCnt);
+		log("get %d users\n", userCnt);
 		list<IM::BaseDefine::UserInfo> lsUsers;
 		for(uint32_t i=0; i<userCnt; ++i)
 		{
@@ -290,6 +341,29 @@ void ClientConn::_HandleUser(CImPdu* pPdu)
 		m_pCallback->onError(nSeqNo, pPdu->GetCommandId(), "parse pb error");
 	}
 }
+
+void ClientConn::_HandleDepartmentList(CImPdu* pPdu)
+{
+	IM::Buddy::IMDepartmentRsp msgResp;
+	uint32_t nSeqNo = pPdu->GetSeqNum();
+	if(msgResp.ParseFromArray(pPdu->GetBodyData(), pPdu->GetBodyLength()))
+	{
+		uint32_t departCnt = msgResp.dept_list_size();
+		log("get %d departs\n", departCnt);
+		list<IM::BaseDefine::DepartInfo> lsDepart;
+		for(uint32_t i=0; i<departCnt; ++i)
+		{
+			IM::BaseDefine::DepartInfo depart= msgResp.dept_list(i);
+			lsDepart.push_back(depart);
+		}
+		m_pCallback->onGetChangedDepart(nSeqNo, lsDepart);
+	}
+	else
+	{
+		m_pCallback->onError(nSeqNo, pPdu->GetCommandId(), "parse pb error");
+	}
+}
+
 
 void ClientConn::_HandleUserInfo(CImPdu* pPdu)
 {
@@ -436,4 +510,8 @@ void ClientConn::_HandleMsgData(CImPdu* pPdu)
 	{
 		m_pCallback->onError(nSeqNo, pPdu->GetCommandId(), "parse pb falied");
 	}
+}
+
+void ClientConn::_HandleP2PCmd(CImPdu* pPdu)
+{
 }

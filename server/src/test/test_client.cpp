@@ -20,6 +20,7 @@
 #include "playsound.h"
 #include "Common.h"
 #include "Client.h"
+#include "security.h"
 using namespace std;
 
 #define MAX_LINE_LEN	1024
@@ -54,12 +55,11 @@ void print_help()
 {
 	printf("Usage:\n");
 	printf("login user_name user_pass\n");
-	/*
-	   printf("connect serv_ip serv_port user_name user_pass\n");
-	   printf("getuserinfo\n");
-	   printf("send toId msg\n");
-	   printf("unreadcnt\n");
-	   */
+	printf("getalluser\n");
+	printf("getdepart\n");
+	printf("getuserdepart\n");
+	printf("send <id> msg\n");
+	printf("listuserid\n");
 	printf("close\n");
 	printf("quit\n");
 }
@@ -68,7 +68,7 @@ void doLogin(const string& strName, const string& strPass)
 {
 	try
 	{
-		g_pClient = new CClient(strName, strPass);
+		g_pClient = new CClient(strName, strPass, g_login_domain);
 	}
 	catch(...)
 	{
@@ -76,8 +76,15 @@ void doLogin(const string& strName, const string& strPass)
 		PROMPTION;
 		return;
 	}
-	g_pClient->connect();
+	try{
+		g_pClient->connect();
+	} catch (...) {
+		printf("connect error\n");
+		return;
+	}
+	return;
 }
+	
 void exec_cmd()
 {
 	if (g_cmd_num == 0) {
@@ -88,7 +95,12 @@ void exec_cmd()
 	{
 		if(g_cmd_num == 3)
 		{
-			doLogin(g_cmd_string[1], g_cmd_string[2]);
+			char *enc_pass = NULL;
+			unsigned int enc_pass_len = 0;
+			EncryptPass(g_cmd_string[2].c_str(), g_cmd_string[2].length(), &enc_pass, enc_pass_len);
+			string password_enc {enc_pass, enc_pass_len};
+			free(enc_pass);
+			doLogin(g_cmd_string[1], password_enc);
 		}
 		else
 		{
@@ -100,37 +112,67 @@ void exec_cmd()
 	}
 	else if (strcmp(g_cmd_string[0].c_str(), "quit") == 0) {
 		exit(0);
-
 	}
 	else if(strcmp(g_cmd_string[0].c_str(), "list") == 0)
 	{
-		printf("+---------------------+\n");
-		printf("|        用户名        |\n");
-		printf("+---------------------+\n");
-		CMapNick2User_t mapUser = g_pClient->getNick2UserMap();
-		auto it = mapUser.begin();
-		for(;it!=mapUser.end();++it)
+		printf("+-------+---------------------+\n");
+		printf("| id    |        用户名       |\n");
+		printf("+-------+---------------------+\n");
+		CMapId2User_t mapUser = g_pClient->getMapId2UserMap();
+		for(auto it = mapUser.begin(); it!=mapUser.end(); ++it)
 		{
-			uint32_t nLen = 21 - it->first.length();
-			printf("|");
-			for(uint32_t i=0; i<nLen/2; ++it)
-			{
-				printf(" ");
-			}
-			printf("%s", it->first.c_str());
-			for(uint32_t i=0; i<nLen/2; ++it)
-			{
-				printf(" ");
-			}
-			printf("|\n");
-			printf("+---------------------+\n");
+			printf("|%-7u|%21s|\n", it->first, it->second->user_nick_name().c_str());
+			printf("+-------+---------------------+\n");
+		}
+		printf("| id    |        部门名       |\n");
+		printf("+-------+---------------------+\n");
+		CMapId2Depart_t mapdepart = g_pClient->getMapId2DepartMap();
+		for(auto it=mapdepart.begin(); it!=mapdepart.end(); ++it){
+			printf("|%-7u|%21s|\n", it->first, it->second->dept_name().c_str());
+			printf("+-------+---------------------+\n");
+		}
+	}
+	else if(g_cmd_string[0] == "getalluser") {
+		uint32_t ret = g_pClient->getChangedUser();
+		log("result %u", ret);
+	}
+	else if(g_cmd_string[0] == "getdepart") {
+		uint32_t ret = g_pClient->getChangedDepart();
+		log("getdepart seqNo %u", ret);
+	}
+	else if(g_cmd_string[0] == "getuserdepart") {
+		uint32_t ret = g_pClient->getChangedUser();
+		log("getuser seqNo %u", ret);
+		ret = g_pClient->getChangedDepart();
+		log("getdepart seqNo %u", ret);
+	}
+	else if(g_cmd_string[0] == "getsession") {
+		uint32_t ret = g_pClient->getRecentSession();
+		log("get session seqNo %u", ret);
+	}
+	else if(g_cmd_string[0] == "listsession") {
+		printf("---------------------------------------\n");
+		ContactSession&	session = g_pClient->get_contact_session();
+		for(auto it = session.begin(); it != session.end(); ++it){
+			printf("session id: %u, latest_msg_id: %u, latest_msg_from_user_id: %u\n", it->first, it->second->latest_msg_id(), it->second->latest_msg_from_user_id());
+			printf("---------------------------------------\n");
+		}
+	}
+	else if(g_cmd_string[0] == "getmsg") {
+		g_pClient->getAllMsg();
+	}
+	else if(g_cmd_string[0] == "showmsg") {
+		Msg & msg = g_pClient->get_msg();
+		printf("---------------------------------------\n");
+		for(auto it = msg.begin(); it != msg.end(); ++it){
+			printf("msg_id: %u, from_session_id: %u, msg_data: %s\n", it->first, it->second->from_session_id(), it->second->msg_data().c_str());
+			printf("---------------------------------------\n");
 		}
 	}
 	else {
 		print_help();
 	}
 }
-
 
 class CmdThread : public CThread
 {

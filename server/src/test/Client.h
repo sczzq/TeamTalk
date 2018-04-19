@@ -19,22 +19,40 @@ using namespace std;
 
 typedef hash_map<uint32_t, IM::BaseDefine::UserInfo*> CMapId2User_t;
 typedef hash_map<string, IM::BaseDefine::UserInfo*> CMapNick2User_t;
+
+typedef hash_map<uint32_t, IM::BaseDefine::DepartInfo*> CMapId2Depart_t;
+typedef hash_map<string, IM::BaseDefine::DepartInfo*> CMapNick2Depart_t;
+
+typedef hash_map<uint32_t, IM::BaseDefine::ContactSessionInfo*> ContactSession;
+
+typedef hash_map<uint32_t, IM::BaseDefine::MsgInfo*> Msg;
+
+typedef hash_map<uint32_t, IM::BaseDefine::UnreadInfo*> UnreadInfo;
+
 class CClient:public IPacketCallback
 {
 	public:
-		CClient(const string& strName, const string& strPass, const string strDomain="access.tt.mogujie.org");
+		CClient(const string& strName, const string& strPass, const string strDomain);
 		~CClient();
 	public:
 		string getName(){ return m_strName; }
 		string getDomain() { return m_strLoginDomain; }
 		static void TimerCallback(void* callback_data, uint8_t msg, uint32_t handle, void* pParam);
 		CMapNick2User_t& getNick2UserMap() { return m_mapNick2UserInfo; }
+		CMapId2User_t& getMapId2UserMap() { return m_mapId2UserInfo; }
 
+		CMapId2Depart_t& getMapId2DepartMap() { return m_mapId2DepartInfo; }
+		ContactSession&	get_contact_session() { return m_contact_session; }
+
+		Msg&	 get_msg() { return m_msg; }
+		
 	public:
 		void connect();
 		void close();
-		uint32_t login(const string& strName, const string& strPass);
+		uint32_t login();
+		uint32_t getAllMsg();
 		uint32_t getChangedUser();
+		uint32_t getChangedDepart();
 		uint32_t getUserInfo(list<uint32_t>& lsUserId);
 		uint32_t sendMsg(uint32_t nToId,IM::BaseDefine::MsgType nType, const string& strMsg);
 		uint32_t getUnreadMsgCnt();
@@ -47,6 +65,7 @@ class CClient:public IPacketCallback
 		virtual void onClose();
 		virtual void onLogin(uint32_t nSeqNo, uint32_t nResultCode, string& strMsg, IM::BaseDefine::UserInfo* pUser = NULL);
 		virtual void onGetChangedUser(uint32_t nSeqNo,const list<IM::BaseDefine::UserInfo>& lsUser);
+		virtual void onGetChangedDepart(uint32_t nSeqNo,const list<IM::BaseDefine::DepartInfo>& lsDepart);
 		virtual void onGetUserInfo(uint32_t nSeqNo, const list<IM::BaseDefine::UserInfo>& lsUser);
 		virtual void onSendMsg(uint32_t nSeqNo, uint32_t nSendId, uint32_t nRecvId, IM::BaseDefine::SessionType nType, uint32_t nMsgId);
 		virtual void onGetUnreadMsgCnt(uint32_t nSeqNo, uint32_t nUserId, uint32_t nTotalCnt, const list<IM::BaseDefine::UnreadInfo>& lsUnreadCnt);
@@ -66,6 +85,13 @@ class CClient:public IPacketCallback
 
 		CMapId2User_t m_mapId2UserInfo;
 		CMapNick2User_t m_mapNick2UserInfo;
+
+		CMapId2Depart_t m_mapId2DepartInfo;
+		CMapNick2Depart_t m_mapNick2DepartInfo;
+
+		ContactSession	m_contact_session;
+		Msg 		m_msg;
+		UnreadInfo	m_unread_info;
 };
 
 

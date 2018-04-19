@@ -26,7 +26,7 @@
 class ClientConn : public CImConn
 {
 	public:
-		ClientConn();
+		ClientConn(IPacketCallback* );
 		virtual ~ClientConn();
 
 		bool IsOpen() { return m_bOpen; }
@@ -35,8 +35,9 @@ class ClientConn : public CImConn
 
 		virtual void Close();
 	public:
-		uint32_t login(const string& strName, const string& strPass);
-		uint32_t getUser(uint32_t nUserId, uint32_t nTime =0);
+		uint32_t login(const string strName, const string strPass);
+		uint32_t getAllUser(uint32_t nUserId, uint32_t nTime =0);
+		uint32_t getAllDepart(uint32_t nUserId, uint32_t nTime =0);
 		uint32_t getUserInfo(uint32_t nUserId, list<uint32_t>& lsUserId);
 		uint32_t sendMessage(uint32_t nFromId, uint32_t nToId, IM::BaseDefine::MsgType nType, const string& strMsgData);
 		uint32_t getUnreadMsgCnt(uint32_t nUserId);
@@ -51,13 +52,16 @@ class ClientConn : public CImConn
 		virtual void HandlePdu(CImPdu* pPdu);
 	private:
 		void _HandleLoginResponse(CImPdu* pPdu);
-		void _HandleUser(CImPdu* pPdu);
+		void _HandleAllUser(CImPdu* pPdu);
+		void _HandleDepartmentList(CImPdu* pPdu);
 		void _HandleUserInfo(CImPdu* pPdu);
 		void _HandleSendMsg(CImPdu* pPdu);
 		void _HandleUnreadCnt(CImPdu* pPdu);
 		void _HandleRecentSession(CImPdu* pPdu);
 		void _HandleMsgList(CImPdu* pPdu);
 		void _HandleMsgData(CImPdu* pPdu);
+		void _HandleStatusNotify(CImPdu* pPdu);
+		void _HandleP2PCmd(CImPdu* pPdu);
 
 	private:
 		bool 		m_bOpen;

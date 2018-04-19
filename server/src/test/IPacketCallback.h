@@ -26,6 +26,7 @@ public:
     virtual void onError(uint32_t nSeqNo, uint32_t nCmd, const string& strMsg) = 0;
     virtual void onLogin(uint32_t nSeqNo, uint32_t nResultCode, string& strMsg, IM::BaseDefine::UserInfo* pUser = NULL) = 0;
     virtual void onGetChangedUser(uint32_t nSeqNo,const list<IM::BaseDefine::UserInfo>& lsUser) = 0;
+    virtual void onGetChangedDepart(uint32_t nSeqNo,const list<IM::BaseDefine::DepartInfo>& lsDepart) = 0;
     virtual void onGetUserInfo(uint32_t nSeqNo,const list<IM::BaseDefine::UserInfo>& lsUser) = 0;
     virtual void onSendMsg(uint32_t nSeqNo, uint32_t nUserId, uint32_t nRecvId, IM::BaseDefine::SessionType nType, uint32_t nMsgId) = 0;
     virtual void onGetUnreadMsgCnt(uint32_t nSeqNo, uint32_t nUserId, uint32_t nTotalCnt, const list<IM::BaseDefine::UnreadInfo>& lsUnreadCnt) = 0;
