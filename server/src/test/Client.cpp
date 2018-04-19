@@ -293,7 +293,7 @@ uint32_t CClient::getUnreadMsgCnt()
 
 void CClient::onGetUnreadMsgCnt(uint32_t nSeqNo, uint32_t nUserId, uint32_t nTotalCnt, const list<IM::BaseDefine::UnreadInfo>& lsUnreadCnt)
 {
-	log("get unread msg count success,")
+	log("get unread msg count success,");
 	log("seqNo: %u, userId: %u, totalcnt: %u", nSeqNo, nUserId, nTotalCnt);
 	for(auto it = lsUnreadCnt.begin(); it != lsUnreadCnt.end(); ++it){
 		uint32_t id = it->session_id();
