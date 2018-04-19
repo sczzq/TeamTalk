@@ -267,6 +267,9 @@ void ClientConn::HandlePdu(CImPdu* pPdu)
 		case IM::BaseDefine::CID_MSG_DATA:
 			_HandleMsgData(pPdu);
 			break;
+		case IM::BaseDefine::CID_MSG_READ_NOTIFY:
+			_HandleMsgReadNotify(pPdu);
+			break;
 		case IM::BaseDefine::CID_BUDDY_LIST_STATUS_NOTIFY:
 			_HandleStatusNotify(pPdu);
 			break;
@@ -508,6 +511,17 @@ void ClientConn::_HandleMsgData(CImPdu* pPdu)
 	}
 	else
 	{
+		m_pCallback->onError(nSeqNo, pPdu->GetCommandId(), "parse pb falied");
+	}
+}
+
+void ClientConn::_HandleMsgReadNotify(CImPdu* pPdu)
+{
+	IM::Message::IMMsgDataReadNotify msg;
+	uint32_t nSeqNo = pPdu->GetSeqNum();
+	if(msg.ParseFromArray(pPdu->GetBodyData(), pPdu->GetBodyLength())) {
+		log("user_id: %u, session_id: %u, msg_id: %u", msg.user_id(), msg.session_id(), msg.msg_id());
+	} else {
 		m_pCallback->onError(nSeqNo, pPdu->GetCommandId(), "parse pb falied");
 	}
 }

@@ -60,6 +60,7 @@ class ClientConn : public CImConn
 		void _HandleRecentSession(CImPdu* pPdu);
 		void _HandleMsgList(CImPdu* pPdu);
 		void _HandleMsgData(CImPdu* pPdu);
+		void _HandleMsgReadNotify(CImPdu* pPdu);
 		void _HandleStatusNotify(CImPdu* pPdu);
 		void _HandleP2PCmd(CImPdu* pPdu);
 
