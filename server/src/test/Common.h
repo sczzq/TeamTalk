@@ -14,7 +14,7 @@
 #include "ImPduBase.h"
 
 #define PROMPT		"im-client> "
-#define PROMPTION fprintf(stderr, "%s", PROMPT);
+#define PROMPTION(x) fprintf(stderr, "%s>", x);
 
 typedef void (*packet_callback_t)(CImPdu* pPdu);
 

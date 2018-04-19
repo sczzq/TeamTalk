@@ -14,7 +14,7 @@
 #include "Common.h"
 #include "json/json.h"
 #include "ClientConn.h"
-
+#include "security.h"
 
 static ClientConn*  g_pConn = NULL;
 
@@ -56,7 +56,7 @@ void CClient::connect()
 	if(nRet != CURLE_OK)
 	{
 		printf("login falied. access url:%s error\n", strUrl.c_str());
-		PROMPTION;
+		PROMPTION(m_strName.c_str());
 		return;
 	}
 	Json::Reader reader;
@@ -64,7 +64,7 @@ void CClient::connect()
 	if(!reader.parse(strResp, value))
 	{
 		printf("login falied. parse response error:%s\n", strResp.c_str());
-		PROMPTION;
+		PROMPTION(m_strName.c_str());
 		return;
 	}
 	string strPriorIp, strBackupIp;
@@ -75,7 +75,7 @@ void CClient::connect()
 		{
 			string strMsg = value["msg"].asString();
 			printf("login falied. errorMsg:%s\n", strMsg.c_str());
-			PROMPTION;
+			PROMPTION(m_strName.c_str());
 			return;
 		}
 		strPriorIp = value["priorIP"].asString();
@@ -84,7 +84,7 @@ void CClient::connect()
 
 	} catch (std::runtime_error msg) {
 		printf("login falied. get json error:%s\n", strResp.c_str());
-		PROMPTION;
+		PROMPTION(m_strName.c_str());
 		return;
 	}
 
@@ -106,6 +106,7 @@ void CClient::connect()
 	else
 	{
 		printf("invalid socket handle\n");
+		PROMPTION(m_strName.c_str());
 	}
 }
 
@@ -136,6 +137,7 @@ void CClient::onLogin(uint32_t nSeqNo, uint32_t nResultCode, string& strMsg, IM:
 	if(nResultCode != 0)
 	{
 		printf("login failed.errorCode=%u, msg=%s\n",nResultCode, strMsg.c_str());
+		PROMPTION(m_strName.c_str());
 		return;
 	}
 	if(pUser)
@@ -144,6 +146,7 @@ void CClient::onLogin(uint32_t nSeqNo, uint32_t nResultCode, string& strMsg, IM:
 		g_bLogined = true;
 		printf("login success\n");
 		printf("try to get info\n");
+		PROMPTION(m_strName.c_str());
 		getChangedUser();
 		getChangedDepart();
 		getRecentSession();
@@ -152,6 +155,7 @@ void CClient::onLogin(uint32_t nSeqNo, uint32_t nResultCode, string& strMsg, IM:
 	else
 	{
 		printf("pUser is null\n");
+		PROMPTION(m_strName.c_str());
 	}
 }
 
@@ -164,6 +168,7 @@ uint32_t CClient::getAllMsg()
 		auto msgcnt = it->second->unread_cnt();
 		getMsgList(session_type, peerid, msgid, msgcnt);
 	}
+	m_unread_info.clear();
 	return 0;
 }
 
@@ -280,7 +285,8 @@ uint32_t CClient::sendMsg(uint32_t nToId, IM::BaseDefine::MsgType nType, const s
 
 void CClient::onSendMsg(uint32_t nSeqNo, uint32_t nSendId, uint32_t nRecvId, IM::BaseDefine::SessionType nType, uint32_t nMsgId)
 {
-	printf("send msg succes. seqNo:%u, msgId:%u\n", nSeqNo, nMsgId);
+	printf("\nsend msg succes. seqNo:%u, msgId:%u\n", nSeqNo, nMsgId);
+	PROMPTION(m_strName.c_str());
 }
 
 
@@ -306,8 +312,12 @@ void CClient::onGetUnreadMsgCnt(uint32_t nSeqNo, uint32_t nUserId, uint32_t nTot
 			m_unread_info[id] = info;
 		}
 	}
-	log("then try to get this msg");
-	getAllMsg();
+	if(m_unread_info.size() > 0){
+		log("then try to get this msg");
+		getAllMsg();
+	} else {
+		log("no unread msg.");
+	}
 }
 
 uint32_t CClient::getRecentSession()
@@ -355,11 +365,31 @@ void CClient::onGetMsgList(uint32_t nSeqNo, uint32_t nUserId, uint32_t nPeerId, 
 			delete it2->second;
 			m_msg[id] = info;
 		}
+		char *plain_msg = NULL;
+		uint32_t plain_msg_length = 0;
+		DecryptMsg(it->msg_data().c_str(), it->msg_data().length(), &plain_msg, plain_msg_length);
+//		string msg{plain_msg, plain_msg_length};
+		log("plain_msg_length: %u, plain_msg: %s", plain_msg_length, plain_msg);
+		free(plain_msg);
+		g_pConn->sendMsgAck(nUserId, nPeerId, nType, nMsgId);
 	}
 }
-
+extern string hername;
+extern uint32_t herid;
 void CClient::onRecvMsg(uint32_t nSeqNo, uint32_t nFromId, uint32_t nToId, uint32_t nMsgId, uint32_t nCreateTime, IM::BaseDefine::MsgType nMsgType, const string &strMsgData)
 {
-	log("seqNo: %u, fromid: %u, toid: %u, msgid: %u, createtime: %u, msg: %s", nSeqNo, nFromId, nToId, nMsgId, nCreateTime, strMsgData.c_str());
+	char *plain_msg = NULL;
+	uint32_t plain_msg_length = 0;
+	DecryptMsg(strMsgData.c_str(), strMsgData.length(), &plain_msg, plain_msg_length);
+	log("seqNo: %u, fromid: %u, toid: %u, msgid: %u, createtime: %u, msg: %s", nSeqNo, nFromId, nToId, nMsgId, nCreateTime, plain_msg);
+	printf("\n");
+	auto it = m_mapId2UserInfo.find(nFromId);
+	if(it != m_mapId2UserInfo.end())
+		PROMPTION(it->second->user_real_name().c_str());
+	printf("%s\n", plain_msg);
+	PROMPTION(m_strName.c_str());
+	free(plain_msg);
+	hername = it->second->user_real_name();
+	herid = nFromId;
 }
 

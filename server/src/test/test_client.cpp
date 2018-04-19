@@ -28,6 +28,11 @@ string g_login_domain = "192.168.0.106:8080";
 string g_cmd_string[10];
 int g_cmd_num;
 CClient* g_pClient = NULL;
+string myname {"null"}; 
+string hername {"null"};
+uint32_t herid {0};
+string last_command;
+
 void split_cmd(char* buf)
 {
 	int len = strlen(buf);
@@ -58,7 +63,9 @@ void print_help()
 	printf("getalluser\n");
 	printf("getdepart\n");
 	printf("getuserdepart\n");
+	printf("getmsg   to get all unread msg\n");
 	printf("send <id> msg\n");
+	printf("send     enter last user contact session");
 	printf("listuserid\n");
 	printf("close\n");
 	printf("quit\n");
@@ -73,7 +80,7 @@ void doLogin(const string& strName, const string& strPass)
 	catch(...)
 	{
 		printf("get error while alloc memory\n");
-		PROMPTION;
+		PROMPTION(myname.c_str());
 		return;
 	}
 	try{
@@ -91,7 +98,26 @@ void exec_cmd()
 		return;
 	}
 
-	if(g_cmd_string[0] == "login")
+	if(last_command == "send") {
+		if(g_cmd_num == 1 && g_cmd_string[0] == "quit"){
+			last_command = "";
+		} else if(hername != "" and herid != 0) {
+			char *enc_msg = NULL;
+			uint32_t enc_msg_len = 0;
+			string message;
+			for(int i=0; i<g_cmd_num; i++){
+				message += g_cmd_string[i];
+				message += " ";
+			}
+			EncryptMsg(message.c_str(), message.length(), &enc_msg, enc_msg_len);
+			string emsg {enc_msg, enc_msg_len};
+			IM::BaseDefine::MsgType mtype = IM::BaseDefine::MSG_TYPE_SINGLE_TEXT;
+			g_pClient->sendMsg(herid, mtype, emsg);
+		} else {
+			printf("waiting reply...\n");
+		}
+	}
+	else if(g_cmd_string[0] == "login")
 	{
 		if(g_cmd_num == 3)
 		{
@@ -100,6 +126,7 @@ void exec_cmd()
 			EncryptPass(g_cmd_string[2].c_str(), g_cmd_string[2].length(), &enc_pass, enc_pass_len);
 			string password_enc {enc_pass, enc_pass_len};
 			free(enc_pass);
+			myname = g_cmd_string[1];
 			doLogin(g_cmd_string[1], password_enc);
 		}
 		else
@@ -159,7 +186,7 @@ void exec_cmd()
 		}
 	}
 	else if(g_cmd_string[0] == "getmsg") {
-		g_pClient->getAllMsg();
+		g_pClient->getUnreadMsgCnt();
 	}
 	else if(g_cmd_string[0] == "showmsg") {
 		Msg & msg = g_pClient->get_msg();
@@ -167,6 +194,24 @@ void exec_cmd()
 		for(auto it = msg.begin(); it != msg.end(); ++it){
 			printf("msg_id: %u, from_session_id: %u, msg_data: %s\n", it->first, it->second->from_session_id(), it->second->msg_data().c_str());
 			printf("---------------------------------------\n");
+		}
+	}
+	else if(g_cmd_string[0] == "send") {
+		if(g_cmd_num >= 3) {
+			uint32_t toID = atoi(g_cmd_string[1].c_str());
+			char *enc_msg = NULL;
+			uint32_t enc_msg_len = 0;
+			string message;
+			for(int i=2; i<g_cmd_num; i++){
+				message += g_cmd_string[i];
+			}
+			EncryptMsg(message.c_str(), message.length(), &enc_msg, enc_msg_len);
+			string emsg {enc_msg, enc_msg_len};
+			IM::BaseDefine::MsgType mtype = IM::BaseDefine::MSG_TYPE_SINGLE_TEXT;
+			g_pClient->sendMsg(toID, mtype, emsg);
+			last_command = "send";
+		} else {
+			print_help();
 		}
 	}
 	else {
@@ -181,7 +226,7 @@ class CmdThread : public CThread
 		{
 			while (true)
 			{
-				fprintf(stderr, "%s", PROMPT);	// print to error will not buffer the printed message
+				fprintf(stderr, "%s>", myname.c_str());	// print to error will not buffer the printed message
 
 				if (fgets(m_buf, MAX_LINE_LEN - 1, stdin) == NULL)
 				{
