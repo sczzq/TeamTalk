@@ -384,28 +384,28 @@ check_all() {
 	get_setup_process
 
 	#redis
-	check_module $REDIS $REDIS_SETUP_BEGIN $REDIS_SETUP_SUCCESS
-	if [ $? -eq 1 ]; then
-		exit 1
-	fi
+	#check_module $REDIS $REDIS_SETUP_BEGIN $REDIS_SETUP_SUCCESS
+	#if [ $? -eq 1 ]; then
+	#	exit 1
+	#fi
 	
 	#mysql
-	check_module $MYSQL $MYSQL_SETUP_BEGIN $MYSQL_SETUP_SUCCESS
-	if [ $? -eq 1 ]; then
-		exit 1
-	fi
+	#check_module $MYSQL $MYSQL_SETUP_BEGIN $MYSQL_SETUP_SUCCESS
+	#if [ $? -eq 1 ]; then
+	#	exit 1
+	#fi
 
 	#nginx
-	check_module $NGINX $NGINX_SETUP_BEGIN $NGINX_SETUP_SUCCESS
-	if [ $? -eq 1 ]; then
-		exit 1
-	fi
+	#check_module $NGINX $NGINX_SETUP_BEGIN $NGINX_SETUP_SUCCESS
+	#if [ $? -eq 1 ]; then
+	#	exit 1
+	#fi
 	
 	#php
-	check_module $PHP $PHP_SETUP_BEGIN $PHP_SETUP_SUCCESS
-	if [ $? -eq 1 ]; then
-		exit 1
-	fi
+	#check_module $PHP $PHP_SETUP_BEGIN $PHP_SETUP_SUCCESS
+	#if [ $? -eq 1 ]; then
+	#	exit 1
+	#fi
 
 	#im_web
 	check_module $IM_WEB $IM_WEB_SETUP_BEGIN $IM_WEB_SETUP_SUCCESS
@@ -461,29 +461,29 @@ build_all() {
 	fi
 
 	#redis
-	build_module $REDIS $REDIS_SETUP_BEGIN $REDIS_SETUP_SUCCESS
-	if [ $? -eq 1 ]; then
-		exit 1
-	fi
+	#build_module $REDIS $REDIS_SETUP_BEGIN $REDIS_SETUP_SUCCESS
+	#if [ $? -eq 1 ]; then
+	#	exit 1
+	#fi
 
 
 	#mysql
-	build_module $MYSQL $MYSQL_SETUP_BEGIN $MYSQL_SETUP_SUCCESS
-	if [ $? -eq 1 ]; then
-		exit 1
-	fi
+	#build_module $MYSQL $MYSQL_SETUP_BEGIN $MYSQL_SETUP_SUCCESS
+	#if [ $? -eq 1 ]; then
+	#	exit 1
+	#fi
 
 	#nginx
-	build_module $NGINX $NGINX_SETUP_BEGIN $NGINX_SETUP_SUCCESS
-	if [ $? -eq 1 ]; then
-		exit 1
-	fi
+	#build_module $NGINX $NGINX_SETUP_BEGIN $NGINX_SETUP_SUCCESS
+	#if [ $? -eq 1 ]; then
+	#	exit 1
+	#fi
 
 	#php
-	build_module $PHP $PHP_SETUP_BEGIN $PHP_SETUP_SUCCESS
-	if [ $? -eq 1 ]; then
-		exit 1
-	fi
+	#build_module $PHP $PHP_SETUP_BEGIN $PHP_SETUP_SUCCESS
+	#if [ $? -eq 1 ]; then
+	#	exit 1
+	#fi
 
 	#im_web
 	build_module $IM_WEB $IM_WEB_SETUP_BEGIN $IM_WEB_SETUP_SUCCESS

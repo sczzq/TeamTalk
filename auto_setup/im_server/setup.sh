@@ -17,7 +17,8 @@ HTTP_MSG_SERVER=http_msg_server
 PUSH_SERVER=push_server
 DB_PROXY_SERVER=db_proxy_server
 
-
+CONF_DIR=conf
+#CONF_DIR=conf-wifi
 FILE_SERVER_CONF=fileserver.conf
 LOGIN_SERVER_CONF=loginserver.conf
 MSG_SERVER_CONF=msgserver.conf
@@ -71,21 +72,21 @@ build_im_server() {
 
 	#yum -y install yum-fastestmirror
 	clean_yum
-	yum -y install libuuid-devel
-	yum -y install apr-util-devel
+#	yum -y install libuuid-devel
+#	yum -y install apr-util-devel
 	mkdir -p $INSTALL_DIR
 	tar zxvf $IM_SERVER.tar.gz -C $INSTALL_DIR/
 	if [ $? -eq 0 ]; then
 		echo "unzip im-server successed."
 		set -x
-		cp -f ./conf/$LOGIN_SERVER_CONF $INSTALL_DIR/$IM_SERVER/$LOGIN_SERVER/
-		cp -f ./conf/$MSG_SERVER_CONF $INSTALL_DIR/$IM_SERVER/$MSG_SERVER/
-		cp -f ./conf/$ROUTE_SERVER_CONF $INSTALL_DIR/$IM_SERVER/$ROUTE_SERVER/
-		cp -f ./conf/$FILE_SERVER_CONF $INSTALL_DIR/$IM_SERVER/$FILE_SERVER/
-		cp -f ./conf/$MSFS_SERVER_CONF $INSTALL_DIR/$IM_SERVER/$MSFS_SERVER/
-		cp -f ./conf/$HTTP_MSG_SERVER_CONF $INSTALL_DIR/$IM_SERVER/$HTTP_MSG_SERVER/
-		cp -f ./conf/$PUSH_SERVER_CONF	$INSTALL_DIR/$IM_SERVER/$PUSH_SERVER/
-		cp -f ./conf/$DB_PROXY_SERVER_CONF $INSTALL_DIR/$IM_SERVER/$DB_PROXY_SERVER/
+		cp -f ./$CONF_DIR/$LOGIN_SERVER_CONF $INSTALL_DIR/$IM_SERVER/$LOGIN_SERVER/
+		cp -f ./$CONF_DIR/$MSG_SERVER_CONF $INSTALL_DIR/$IM_SERVER/$MSG_SERVER/
+		cp -f ./$CONF_DIR/$ROUTE_SERVER_CONF $INSTALL_DIR/$IM_SERVER/$ROUTE_SERVER/
+		cp -f ./$CONF_DIR/$FILE_SERVER_CONF $INSTALL_DIR/$IM_SERVER/$FILE_SERVER/
+		cp -f ./$CONF_DIR/$MSFS_SERVER_CONF $INSTALL_DIR/$IM_SERVER/$MSFS_SERVER/
+		cp -f ./$CONF_DIR/$HTTP_MSG_SERVER_CONF $INSTALL_DIR/$IM_SERVER/$HTTP_MSG_SERVER/
+		cp -f ./$CONF_DIR/$PUSH_SERVER_CONF	$INSTALL_DIR/$IM_SERVER/$PUSH_SERVER/
+		cp -f ./$CONF_DIR/$DB_PROXY_SERVER_CONF $INSTALL_DIR/$IM_SERVER/$DB_PROXY_SERVER/
 
 		cd $IM_SERVER
 		chmod +x ./sync_lib_for_zip.sh
