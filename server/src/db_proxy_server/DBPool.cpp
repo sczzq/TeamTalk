@@ -27,7 +27,7 @@ CResultSet::CResultSet(MYSQL_RES* res)
 	MYSQL_FIELD* fields = mysql_fetch_fields(m_res);
 	for(int i = 0; i < num_fields; i++)
 	{
-	   m_key_map.insert(make_pair(fields[i].name, i));
+		m_key_map.insert(make_pair(fields[i].name, i));
 	}
 }
 
@@ -165,14 +165,14 @@ void CPrepareStatement::SetParam(uint32_t index, string& value)
 
 void CPrepareStatement::SetParam(uint32_t index, const string& value)
 {
-    if (index >= m_param_cnt) {
-        log("index too large: %d", index);
-        return;
-    }
-    
-    m_param_bind[index].buffer_type = MYSQL_TYPE_STRING;
-    m_param_bind[index].buffer = (char*)value.c_str();
-    m_param_bind[index].buffer_length = value.size();
+	if (index >= m_param_cnt) {
+		log("index too large: %d", index);
+		return;
+	}
+
+	m_param_bind[index].buffer_type = MYSQL_TYPE_STRING;
+	m_param_bind[index].buffer = (char*)value.c_str();
+	m_param_bind[index].buffer_length = value.size();
 }
 
 bool CPrepareStatement::ExecuteUpdate()
@@ -230,7 +230,7 @@ int CDBConn::Init()
 	mysql_options(m_mysql, MYSQL_SET_CHARSET_NAME, "utf8mb4");
 
 	if (!mysql_real_connect(m_mysql, m_pDBPool->GetDBServerIP(), m_pDBPool->GetUsername(), m_pDBPool->GetPasswrod(),
-			m_pDBPool->GetDBName(), m_pDBPool->GetDBServerPort(), NULL, 0)) {
+				m_pDBPool->GetDBName(), m_pDBPool->GetDBServerPort(), NULL, 0)) {
 		log("mysql_real_connect failed: %s", mysql_error(m_mysql));
 		return 2;
 	}
@@ -433,7 +433,7 @@ int CDBManager::Init()
 	char dbname[64];
 	char username[64];
 	char password[64];
-    char maxconncnt[64];
+	char maxconncnt[64];
 	CStrExplode instances_name(db_instances, ',');
 
 	for (uint32_t i = 0; i < instances_name.GetItemCnt(); i++) {
@@ -443,14 +443,14 @@ int CDBManager::Init()
 		snprintf(dbname, 64, "%s_dbname", pool_name);
 		snprintf(username, 64, "%s_username", pool_name);
 		snprintf(password, 64, "%s_password", pool_name);
-        snprintf(maxconncnt, 64, "%s_maxconncnt", pool_name);
+		snprintf(maxconncnt, 64, "%s_maxconncnt", pool_name);
 
 		char* db_host = config_file.GetConfigName(host);
 		char* str_db_port = config_file.GetConfigName(port);
 		char* db_dbname = config_file.GetConfigName(dbname);
 		char* db_username = config_file.GetConfigName(username);
 		char* db_password = config_file.GetConfigName(password);
-        char* str_maxconncnt = config_file.GetConfigName(maxconncnt);
+		char* str_maxconncnt = config_file.GetConfigName(maxconncnt);
 
 		if (!db_host || !str_db_port || !db_dbname || !db_username || !db_password || !str_maxconncnt) {
 			log("not configure db instance: %s", pool_name);
@@ -458,7 +458,7 @@ int CDBManager::Init()
 		}
 
 		int db_port = atoi(str_db_port);
-        int db_maxconncnt = atoi(str_maxconncnt);
+		int db_maxconncnt = atoi(str_maxconncnt);
 		CDBPool* pDBPool = new CDBPool(pool_name, db_host, db_port, db_username, db_password, db_dbname, db_maxconncnt);
 		if (pDBPool->Init()) {
 			log("init db instance failed: %s", pool_name);

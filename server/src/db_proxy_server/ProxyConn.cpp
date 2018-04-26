@@ -57,21 +57,21 @@ static void sig_handler(int sig_no)
 {
 	if (sig_no == SIGTERM) {
 		log("receive SIGTERM, prepare for exit");
-        CImPdu cPdu;
-        IM::Server::IMStopReceivePacket msg;
-        msg.set_result(0);
-        cPdu.SetPBMsg(&msg);
-        cPdu.SetServiceId(IM::BaseDefine::SID_OTHER);
-        cPdu.SetCommandId(IM::BaseDefine::CID_OTHER_STOP_RECV_PACKET);
-        for (ConnMap_t::iterator it = g_proxy_conn_map.begin(); it != g_proxy_conn_map.end(); it++) {
-            CProxyConn* pConn = (CProxyConn*)it->second;
-            pConn->SendPdu(&cPdu);
-        }
-        // Add By ZhangYuanhao
-        // Before stop we need to stop the sync thread,otherwise maybe will not sync the internal data any more
-        CSyncCenter::getInstance()->stopSync();
-        
-        // callback after 4 second to exit process;
+		CImPdu cPdu;
+		IM::Server::IMStopReceivePacket msg;
+		msg.set_result(0);
+		cPdu.SetPBMsg(&msg);
+		cPdu.SetServiceId(IM::BaseDefine::SID_OTHER);
+		cPdu.SetCommandId(IM::BaseDefine::CID_OTHER_STOP_RECV_PACKET);
+		for (ConnMap_t::iterator it = g_proxy_conn_map.begin(); it != g_proxy_conn_map.end(); it++) {
+			CProxyConn* pConn = (CProxyConn*)it->second;
+			pConn->SendPdu(&cPdu);
+		}
+		// Add By ZhangYuanhao
+		// Before stop we need to stop the sync thread,otherwise maybe will not sync the internal data any more
+		CSyncCenter::getInstance()->stopSync();
+
+		// callback after 4 second to exit process;
 		netlib_register_timer(exit_callback, NULL, 4000);
 	}
 }
@@ -159,17 +159,17 @@ void CProxyConn::OnRead()
 	}
 
 	uint32_t pdu_len = 0;
-    try {
-        while ( CImPdu::IsPduAvailable(m_in_buf.GetBuffer(), m_in_buf.GetWriteOffset(), pdu_len) ) {
-            HandlePduBuf(m_in_buf.GetBuffer(), pdu_len);
-            m_in_buf.Read(NULL, pdu_len);
-        }
-    } catch (CPduException& ex) {
-        log("!!!catch exception, err_code=%u, err_msg=%s, close the connection ",
-            ex.GetErrorCode(), ex.GetErrorMsg());
-        OnClose();
-    }
-	
+	try {
+		while ( CImPdu::IsPduAvailable(m_in_buf.GetBuffer(), m_in_buf.GetWriteOffset(), pdu_len) ) {
+			HandlePduBuf(m_in_buf.GetBuffer(), pdu_len);
+			m_in_buf.Read(NULL, pdu_len);
+		}
+	} catch (CPduException& ex) {
+		log("!!!catch exception, err_code=%u, err_msg=%s, close the connection ",
+				ex.GetErrorCode(), ex.GetErrorMsg());
+		OnClose();
+	}
+
 }
 
 
@@ -181,12 +181,12 @@ void CProxyConn::OnClose()
 void CProxyConn::OnTimer(uint64_t curr_tick)
 {
 	if (curr_tick > m_last_send_tick + SERVER_HEARTBEAT_INTERVAL) {
-        
-        CImPdu cPdu;
-        IM::Other::IMHeartBeat msg;
-        cPdu.SetPBMsg(&msg);
-        cPdu.SetServiceId(IM::BaseDefine::SID_OTHER);
-        cPdu.SetCommandId(IM::BaseDefine::CID_OTHER_HEARTBEAT);
+
+		CImPdu cPdu;
+		IM::Other::IMHeartBeat msg;
+		cPdu.SetPBMsg(&msg);
+		cPdu.SetServiceId(IM::BaseDefine::SID_OTHER);
+		cPdu.SetCommandId(IM::BaseDefine::CID_OTHER_HEARTBEAT);
 		SendPdu(&cPdu);
 	}
 
@@ -198,20 +198,20 @@ void CProxyConn::OnTimer(uint64_t curr_tick)
 
 void CProxyConn::HandlePduBuf(uchar_t* pdu_buf, uint32_t pdu_len)
 {
-    CImPdu* pPdu = NULL;
-    pPdu = CImPdu::ReadPdu(pdu_buf, pdu_len);
-    if (pPdu->GetCommandId() == IM::BaseDefine::CID_OTHER_HEARTBEAT) {
-        return;
-    }
-    
-    pdu_handler_t handler = s_handler_map->GetHandler(pPdu->GetCommandId());
-    
-    if (handler) {
-        CTask* pTask = new CProxyTask(m_uuid, handler, pPdu);
-        g_thread_pool.AddTask(pTask);
-    } else {
-        log("no handler for packet type: %d", pPdu->GetCommandId());
-    }
+	CImPdu* pPdu = NULL;
+	pPdu = CImPdu::ReadPdu(pdu_buf, pdu_len);
+	if (pPdu->GetCommandId() == IM::BaseDefine::CID_OTHER_HEARTBEAT) {
+		return;
+	}
+
+	pdu_handler_t handler = s_handler_map->GetHandler(pPdu->GetCommandId());
+
+	if (handler) {
+		CTask* pTask = new CProxyTask(m_uuid, handler, pPdu);
+		g_thread_pool.AddTask(pTask);
+	} else {
+		log("no handler for packet type: %d", pPdu->GetCommandId());
+	}
 }
 
 /*
