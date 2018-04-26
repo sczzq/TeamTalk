@@ -78,7 +78,7 @@ int CBaseSocket::Listen(const char* server_ip, uint16_t port, callback_t callbac
 
 	m_state = SOCKET_STATE_LISTENING;
 
-	log("CBaseSocket::Listen on %s:%d", server_ip, port);
+	log("CBaseSocket::Listen on %s:%d, handle: %d", server_ip, port, m_socket);
 
 	AddBaseSocket(this);
 	CEventDispatch::Instance()->AddEvent(m_socket, SOCKET_READ | SOCKET_EXCEP);
@@ -156,6 +156,7 @@ int CBaseSocket::Close()
 	RemoveBaseSocket(this);
 	closesocket(m_socket);
 	ReleaseRef();
+	log("close socket, handle: %d", m_socket);
 
 	return 0;
 }
@@ -186,6 +187,7 @@ void CBaseSocket::OnWrite()
 	CEventDispatch::Instance()->RemoveEvent(m_socket, SOCKET_WRITE);
 #endif
 
+	log("OnWrite");
 	if (m_state == SOCKET_STATE_CONNECTING)
 	{
 		int error = 0;

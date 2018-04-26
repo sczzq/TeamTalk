@@ -36,7 +36,7 @@ void imconn_callback(void* callback_data, uint8_t msg, uint32_t handle, void* pP
 	if (!pConn)
 		return;
 
-//	log("msg=%d, handle=%d ", msg, handle);
+	log("msg=%d, handle=%d ", msg, handle);
 
 	switch (msg)
 	{
@@ -63,7 +63,7 @@ void imconn_callback(void* callback_data, uint8_t msg, uint32_t handle, void* pP
 //////////////////////////
 CImConn::CImConn()
 {
-//	log("CImConn::CImConn ");
+	log("CImConn::CImConn ");
 
 	m_busy = false;
 	m_handle = NETLIB_INVALID_HANDLE;
@@ -74,7 +74,7 @@ CImConn::CImConn()
 
 CImConn::~CImConn()
 {
-//	log("CImConn::~CImConn, handle=%d ", m_handle);
+	log("CImConn::~CImConn, handle=%d ", m_handle);
 }
 
 int CImConn::Send(void* data, int len)

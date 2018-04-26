@@ -41,18 +41,18 @@ class CImConn : public CRefObject
 
 	protected:
 		net_handle_t	m_handle;
-		bool			m_busy;
+		bool		m_busy;
 
-		string			m_peer_ip;
-		uint16_t		m_peer_port;
+		string		m_peer_ip;
+		uint16_t	m_peer_port;
 		CSimpleBuffer	m_in_buf;
 		CSimpleBuffer	m_out_buf;
 
-		bool			m_policy_conn;
-		uint32_t		m_recv_bytes;
-		uint64_t		m_last_send_tick;
-		uint64_t		m_last_recv_tick;
-		uint64_t        m_last_all_user_tick;
+		bool		m_policy_conn;
+		uint32_t	m_recv_bytes;
+		uint64_t	m_last_send_tick;
+		uint64_t	m_last_recv_tick;
+		uint64_t	m_last_all_user_tick;
 };
 
 typedef hash_map<net_handle_t, CImConn*> ConnMap_t;
