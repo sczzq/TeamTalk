@@ -19,9 +19,11 @@ string strDiscovery;//发现获取地址
 // this callback will be replaced by imconn_callback() in CLoginConn::OnConnect2()
 // this callback will be called when deliverying read-event to connect.
 // this callback will be replaced by imconn_callback() in CLoginConn::OnConnect2() after connected.
+// no use, seem to no use.
 void client_callback(void* callback_data, uint8_t msg, uint32_t handle, void* pParam)
 {
 	log("client come in");
+	log("handle: %d", handle);
 	if (msg == NETLIB_MSG_CONNECT)
 	{
 		CLoginConn* pConn = new CLoginConn();
@@ -37,7 +39,7 @@ void client_callback(void* callback_data, uint8_t msg, uint32_t handle, void* pP
 void msg_serv_callback(void* callback_data, uint8_t msg, uint32_t handle, void* pParam)
 {
 	log("msg_server come in");
-
+	log("handle: %d", handle);
 	if (msg == NETLIB_MSG_CONNECT)
 	{
 		CLoginConn* pConn = new CLoginConn();
@@ -49,10 +51,11 @@ void msg_serv_callback(void* callback_data, uint8_t msg, uint32_t handle, void* 
 	}
 }
 
-
+// this callback will be replaced by httpconn_callback() in CHttpConn::OnConnect().
 void http_callback(void* callback_data, uint8_t msg, uint32_t handle, void* pParam)
 {
 	log("http come in");
+	log("handle: %d", handle);
 	if (msg == NETLIB_MSG_CONNECT)
 	{
 		CHttpConn* pConn = new CHttpConn();

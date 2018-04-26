@@ -44,16 +44,21 @@ void httpconn_callback(void* callback_data, uint8_t msg, uint32_t handle, uint32
 	if (!pConn) {
 		return;
 	}
+	
+	log("conn_handle: %d", conn_handle);
 
 	switch (msg)
 	{
 		case NETLIB_MSG_READ:
+			log("NETLIB_MSG_READ");
 			pConn->OnRead();
 			break;
 		case NETLIB_MSG_WRITE:
+			log("NETLIB_MSG_WRITE");
 			pConn->OnWrite();
 			break;
 		case NETLIB_MSG_CLOSE:
+			log("NETLIB_MSG_CLOSE");
 			pConn->OnClose();
 			break;
 		default:
@@ -143,7 +148,7 @@ void CHttpConn::Close()
 
 void CHttpConn::OnConnect(net_handle_t handle)
 {
-	log("OnConnect, handle=%d\n", handle);
+	log("OnConnect, connect on server handle=%d, this handle: %d\n", handle, m_conn_handle);
 	m_sock_handle = handle;
 	m_state = CONN_STATE_CONNECTED;
 	g_http_conn_map.insert(make_pair(m_conn_handle, this));
