@@ -14,7 +14,7 @@
 #include <openssl/err.h>
 #include "slog_api.h"
 
-#define NO_APNS
+//#define APNS
 
 CSLog g_pushlog = CSLog(LOG_MODULE_PUSH);
 
@@ -35,6 +35,7 @@ CPushApp* CPushApp::GetInstance()
 BOOL CPushApp::Init()
 {
 	if (!m_bInit) {
+		m_bInit = TRUE;
 		/* SSL 库初始化 */
 		SSL_library_init();
 		/* 载入所有 SSL 算法 */
@@ -42,7 +43,6 @@ BOOL CPushApp::Init()
 		/* 载入所有 SSL 错误消息 */
 		SSL_load_error_strings();
 
-		m_bInit = TRUE;
 		PUSH_SERVER_DEBUG("push app init successed.");
 	}
 	else
@@ -91,13 +91,15 @@ BOOL CPushApp::Start()
 			PUSH_SERVER_ERROR("push app config parameter: sand_box has invaid value: %u.", nsand_box)
 				return FALSE;
 		}
+#ifdef APNS
 		apns_client_ptr pAPNSClient(new CAPNSClient(m_io));
-#ifndef NO_APNS
 		pAPNSClient->SetCertPath(cert_path);
 		pAPNSClient->SetKeyPath(key_path);
 		pAPNSClient->SetKeyPassword(key_password);
 		pAPNSClient->SetSandBox((BOOL)atoi(sand_box));
 		CSessionManager::GetInstance()->SetAPNSClient(pAPNSClient);
+#else
+		apns_client_ptr pAPNSClient;
 #endif
 
 		push_server_ptr pPushServer(new CPushServer(m_io));
@@ -109,10 +111,12 @@ BOOL CPushApp::Start()
 		CSessionManager::GetInstance()->StartCheckPushSession();
 		if (pAPNSClient)
 		{
+#ifdef APNS
 			if (pAPNSClient->Start() == FALSE)
 			{
 				return FALSE;
 			}
+#endif
 		}
 		if (pPushServer)
 		{
