@@ -66,9 +66,9 @@ TeamTalk项目是消息通信的一个解决方案，以下简称项目,
 
 配置说明：
 
-	1，IP/PORT配置，见deploy_for_ip.md
+	1，IP/PORT配置，见 auto_setup/im_server/conf
 
-	2，
+	2，消息通信图。
 
 
 
