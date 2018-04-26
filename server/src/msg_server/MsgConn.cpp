@@ -120,6 +120,7 @@ CMsgConn::~CMsgConn()
 
 void CMsgConn::SendUserStatusUpdate(uint32_t user_status)
 {
+	log("begin");
 	if (!m_bOpen) {
 		return;
 	}
@@ -131,6 +132,7 @@ void CMsgConn::SendUserStatusUpdate(uint32_t user_status)
 
 	// 只有上下线通知才通知LoginServer
 	if (user_status == ::IM::BaseDefine::USER_STATUS_ONLINE) {
+		log("Notify online event to all login_server and all route_server.");
 		IM::Server::IMUserCntUpdate msg;
 		msg.set_user_action(USER_CNT_INC);
 		msg.set_user_id(pImUser->GetUserId());
@@ -151,6 +153,7 @@ void CMsgConn::SendUserStatusUpdate(uint32_t user_status)
 
 		send_to_all_route_server(&pdu2);
 	} else if (user_status == ::IM::BaseDefine::USER_STATUS_OFFLINE) {
+		log("Notify offline event to all login_server and all route_server.");
 		IM::Server::IMUserCntUpdate msg;
 		msg.set_user_action(USER_CNT_DEC);
 		msg.set_user_id(pImUser->GetUserId());
@@ -214,6 +217,7 @@ void CMsgConn::OnConnect(net_handle_t handle)
 	netlib_option(handle, NETLIB_OPT_SET_CALLBACK_DATA, (void*)&g_msg_conn_map);
 	netlib_option(handle, NETLIB_OPT_GET_REMOTE_IP, (void*)&m_peer_ip);
 	netlib_option(handle, NETLIB_OPT_GET_REMOTE_PORT, (void*)&m_peer_port);
+	log("peer_ip: %s, peer_port: %d", m_peer_ip.c_str(), m_peer_port);
 }
 
 void CMsgConn::OnClose()
@@ -252,6 +256,8 @@ void CMsgConn::OnTimer(uint64_t curr_tick)
 		}
 	}
 
+	// here is message ack.
+	// message is from msg_server to client.
 	list<msg_ack_t>::iterator it_old;
 	for (list<msg_ack_t>::iterator it = m_send_msg_list.begin(); it != m_send_msg_list.end(); ) {
 		msg_ack_t msg = *it;
@@ -387,6 +393,7 @@ void CMsgConn::HandlePdu(CImPdu* pPdu)
 
 void CMsgConn::_HandleHeartBeat(CImPdu *pPdu)
 {
+	log("begin, send to client");
 	//响应
 	SendPdu(pPdu);
 }
@@ -394,6 +401,7 @@ void CMsgConn::_HandleHeartBeat(CImPdu *pPdu)
 // process: send validate request to db server
 void CMsgConn::_HandleLoginRequest(CImPdu* pPdu)
 {
+	log("begin, send to client, or send to DBProxyServer");
 	// refuse second validate request
 	if (m_login_name.length() != 0) {
 		log("duplicate LoginRequest in the same conn ");
@@ -444,8 +452,8 @@ void CMsgConn::_HandleLoginRequest(CImPdu* pPdu)
 	m_client_version = msg.client_version();
 	m_client_type = msg.client_type();
 	m_online_status = online_status;
-	log("HandleLoginReq, user_name=%s, status=%u, client_type=%u, client=%s, ",
-			m_login_name.c_str(), online_status, m_client_type, m_client_version.c_str());
+	log("HandleLoginReq, user_name=%s, password=%s, status=%u, client_type=%u, client=%s, ",
+			m_login_name.c_str(), password.c_str(), online_status, m_client_type, m_client_version.c_str());
 	CImUser* pImUser = CImUserManager::GetInstance()->GetImUserByLoginName(GetLoginName());
 	if (!pImUser) {
 		pImUser = new CImUser(GetLoginName());
@@ -470,7 +478,7 @@ void CMsgConn::_HandleLoginRequest(CImPdu* pPdu)
 
 void CMsgConn::_HandleLoginOutRequest(CImPdu *pPdu)
 {
-	log("HandleLoginOutRequest, user_id=%d, client_type=%u. ", GetUserId(), GetClientType());
+	log("HandleLoginOutRequest, user_id=%d, client_type=%u., send to DBProxyServer, and, send to client  ", GetUserId(), GetClientType());
 	CDBServConn* pDBConn = get_db_serv_conn();
 	if (pDBConn) {
 		IM::Login::IMDeviceTokenReq msg;
@@ -500,19 +508,21 @@ void CMsgConn::_HandleKickPCClient(CImPdu *pPdu)
 	IM::Login::IMKickPCClientReq msg;
 	CHECK_PB_PARSE_MSG(msg.ParseFromArray(pPdu->GetBodyData(), pPdu->GetBodyLength()));
 	uint32_t user_id = GetUserId();
+	log("HandleKickPCClient, user_id = %u. , send to RouteServer, and, send to client", user_id);
 	if (!CHECK_CLIENT_TYPE_MOBILE(GetClientType()))
 	{
 		log("HandleKickPCClient, user_id = %u, cmd must come from mobile client. ", user_id);
 		return;
 	}
-	log("HandleKickPCClient, user_id = %u. ", user_id);
 
+	// kick client.
 	CImUser* pImUser = CImUserManager::GetInstance()->GetImUserById(user_id);
 	if (pImUser)
 	{
 		pImUser->KickOutSameClientType(CLIENT_TYPE_MAC, IM::BaseDefine::KICK_REASON_MOBILE_KICK,this);
 	}
 
+	// broadcast to route_server.
 	CRouteServConn* pRouteConn = get_route_serv_conn();
 	if (pRouteConn) {
 		IM::Server::IMServerKickUser msg2;
@@ -526,6 +536,7 @@ void CMsgConn::_HandleKickPCClient(CImPdu *pPdu)
 		pRouteConn->SendPdu(&pdu);
 	}
 
+	// notify to client.
 	IM::Login::IMKickPCClientRsp msg2;
 	msg2.set_user_id(user_id);
 	msg2.set_result_code(0);
@@ -539,6 +550,7 @@ void CMsgConn::_HandleKickPCClient(CImPdu *pPdu)
 
 void CMsgConn::_HandleClientRecentContactSessionRequest(CImPdu *pPdu)
 {
+	log("begin, send to DBProxyServer");
 	CDBServConn* pConn = get_db_serv_conn_for_login();
 	if (!pConn) {
 		return;
@@ -558,6 +570,7 @@ void CMsgConn::_HandleClientRecentContactSessionRequest(CImPdu *pPdu)
 
 void CMsgConn::_HandleClientMsgData(CImPdu* pPdu)
 {
+	log("begin, send to DBProxyServer");
 	IM::Message::IMMsgData msg;
 	CHECK_PB_PARSE_MSG(msg.ParseFromArray(pPdu->GetBodyData(), pPdu->GetBodyLength()));
 	if (msg.msg_data().length() == 0) {
@@ -604,6 +617,7 @@ void CMsgConn::_HandleClientMsgDataAck(CImPdu* pPdu)
 {
 	IM::Message::IMMsgDataAck msg;
 	CHECK_PB_PARSE_MSG(msg.ParseFromArray(pPdu->GetBodyData(), pPdu->GetBodyLength()));
+	log("_HandleClientMsgDataAck");
 
 	IM::BaseDefine::SessionType session_type = msg.session_type();
 	if (session_type == IM::BaseDefine::SESSION_TYPE_SINGLE)
@@ -616,6 +630,7 @@ void CMsgConn::_HandleClientMsgDataAck(CImPdu* pPdu)
 
 void CMsgConn::_HandleClientTimeRequest(CImPdu* pPdu)
 {
+	log("_HandleClientTimeRequest, send to client");
 	IM::Message::IMClientTimeRsp msg;
 	msg.set_server_time((uint32_t)time(NULL));
 	CImPdu pdu;
@@ -634,7 +649,7 @@ void CMsgConn::_HandleClientGetMsgListRequest(CImPdu *pPdu)
 	uint32_t msg_id_begin = msg.msg_id_begin();
 	uint32_t msg_cnt = msg.msg_cnt();
 	uint32_t session_type = msg.session_type();
-	log("HandleClientGetMsgListRequest, req_id=%u, session_type=%u, session_id=%u, msg_id_begin=%u, msg_cnt=%u. ",
+	log("HandleClientGetMsgListRequest, req_id=%u, session_type=%u, session_id=%u, msg_id_begin=%u, msg_cnt=%u., send to DBProxyServer ",
 			GetUserId(), session_type, session_id, msg_id_begin, msg_cnt);
 	CDBServConn* pDBConn = get_db_serv_conn_for_login();
 	if (pDBConn) {
@@ -653,7 +668,7 @@ void CMsgConn::_HandleClientGetMsgByMsgIdRequest(CImPdu *pPdu)
 	uint32_t session_id = msg.session_id();
 	uint32_t session_type = msg.session_type();
 	uint32_t msg_cnt = msg.msg_id_list_size();
-	log("_HandleClientGetMsgByMsgIdRequest, req_id=%u, session_type=%u, session_id=%u, msg_cnt=%u.",
+	log("_HandleClientGetMsgByMsgIdRequest, req_id=%u, session_type=%u, session_id=%u, msg_cnt=%u., send to DBProxyServer",
 			GetUserId(), session_type, session_id, msg_cnt);
 	CDBServConn* pDBConn = get_db_serv_conn_for_login();
 	if (pDBConn) {
@@ -667,7 +682,7 @@ void CMsgConn::_HandleClientGetMsgByMsgIdRequest(CImPdu *pPdu)
 
 void CMsgConn::_HandleClientUnreadMsgCntRequest(CImPdu* pPdu)
 {
-	log("HandleClientUnreadMsgCntReq, from_id=%u ", GetUserId());
+	log("HandleClientUnreadMsgCntReq, from_id=%u, send to DBProxyServer ", GetUserId());
 	IM::Message::IMUnreadMsgCntReq msg;
 	CHECK_PB_PARSE_MSG(msg.ParseFromArray(pPdu->GetBodyData(), pPdu->GetBodyLength()));
 
@@ -688,7 +703,7 @@ void CMsgConn::_HandleClientMsgReadAck(CImPdu* pPdu)
 	uint32_t session_type = msg.session_type();
 	uint32_t session_id = msg.session_id();
 	uint32_t msg_id = msg.msg_id();
-	log("HandleClientMsgReadAck, user_id=%u, session_id=%u, msg_id=%u, session_type=%u. ", GetUserId(),session_id, msg_id, session_type);
+	log("HandleClientMsgReadAck, user_id=%u, session_id=%u, msg_id=%u, session_type=%u. , send to DBProxyServer, send to RouteServer", GetUserId(),session_id, msg_id, session_type);
 
 	CDBServConn* pDBConn = get_db_serv_conn();
 	if (pDBConn) {
@@ -727,7 +742,7 @@ void CMsgConn::_HandleClientGetLatestMsgIDReq(CImPdu *pPdu)
 	CHECK_PB_PARSE_MSG(msg.ParseFromArray(pPdu->GetBodyData(), pPdu->GetBodyLength()));
 	uint32_t session_type = msg.session_type();
 	uint32_t session_id = msg.session_id();
-	log("HandleClientGetMsgListRequest, user_id=%u, session_id=%u, session_type=%u. ", GetUserId(),session_id, session_type);
+	log("HandleClientGetMsgListRequest, user_id=%u, session_id=%u, session_type=%u., send to DBProxyServer ", GetUserId(),session_id, session_type);
 
 	CDBServConn* pDBConn = get_db_serv_conn();
 	if (pDBConn) {
@@ -748,7 +763,7 @@ void CMsgConn::_HandleClientP2PCmdMsg(CImPdu* pPdu)
 	uint32_t from_user_id = msg.from_user_id();
 	uint32_t to_user_id = msg.to_user_id();
 
-	log("HandleClientP2PCmdMsg, %u->%u, cmd_msg: %s ", from_user_id, to_user_id, cmd_msg.c_str());
+	log("HandleClientP2PCmdMsg, %u->%u, cmd_msg: %s, send to RouteServer ", from_user_id, to_user_id, cmd_msg.c_str());
 
 	CImUser* pFromImUser = CImUserManager::GetInstance()->GetImUserById(GetUserId());
 	CImUser* pToImUser = CImUserManager::GetInstance()->GetImUserById(to_user_id);
@@ -772,7 +787,7 @@ void CMsgConn::_HandleClientUserInfoRequest(CImPdu* pPdu)
 	IM::Buddy::IMUsersInfoReq msg;
 	CHECK_PB_PARSE_MSG(msg.ParseFromArray(pPdu->GetBodyData(), pPdu->GetBodyLength()));
 	uint32_t user_cnt = msg.user_id_list_size();
-	log("HandleClientUserInfoReq, req_id=%u, user_cnt=%u ", GetUserId(), user_cnt);
+	log("HandleClientUserInfoReq, req_id=%u, user_cnt=%u, send to DBProxyServer ", GetUserId(), user_cnt);
 	CDBServConn* pDBConn = get_db_serv_conn_for_login();
 	if (pDBConn) {
 		CDbAttachData attach(ATTACH_TYPE_HANDLE, m_handle, 0);
@@ -789,7 +804,7 @@ void CMsgConn::_HandleClientRemoveSessionRequest(CImPdu* pPdu)
 	CHECK_PB_PARSE_MSG(msg.ParseFromArray(pPdu->GetBodyData(), pPdu->GetBodyLength()));
 	uint32_t session_type = msg.session_type();
 	uint32_t session_id = msg.session_id();
-	log("HandleClientRemoveSessionReq, user_id=%u, session_id=%u, type=%u ", GetUserId(), session_id, session_type);
+	log("HandleClientRemoveSessionReq, user_id=%u, session_id=%u, type=%u, send to DBProxyServer, send to RouteServer  ", GetUserId(), session_id, session_type);
 
 	CDBServConn* pConn = get_db_serv_conn();
 	if (pConn) {
@@ -826,7 +841,7 @@ void CMsgConn::_HandleClientAllUserRequest(CImPdu* pPdu)
 	IM::Buddy::IMAllUserReq msg;
 	CHECK_PB_PARSE_MSG(msg.ParseFromArray(pPdu->GetBodyData(), pPdu->GetBodyLength()));
 	uint32_t latest_update_time = msg.latest_update_time();
-	log("HandleClientAllUserReq, user_id=%u, latest_update_time=%u. ", GetUserId(), latest_update_time);
+	log("HandleClientAllUserReq, user_id=%u, latest_update_time=%u., send to DBProxyServer ", GetUserId(), latest_update_time);
 
 	CDBServConn* pConn = get_db_serv_conn();
 	if (pConn) {
@@ -842,7 +857,7 @@ void CMsgConn::_HandleChangeAvatarRequest(CImPdu* pPdu)
 {
 	IM::Buddy::IMChangeAvatarReq msg;
 	CHECK_PB_PARSE_MSG(msg.ParseFromArray(pPdu->GetBodyData(), pPdu->GetBodyLength()));
-	log("HandleChangeAvatarRequest, user_id=%u ", GetUserId());
+	log("HandleChangeAvatarRequest, user_id=%u, send to DBProxyServer ", GetUserId());
 	CDBServConn* pDBConn = get_db_serv_conn();
 	if (pDBConn) {
 		msg.set_user_id(GetUserId());
@@ -856,7 +871,7 @@ void CMsgConn::_HandleClientUsersStatusRequest(CImPdu* pPdu)
 	IM::Buddy::IMUsersStatReq msg;
 	CHECK_PB_PARSE_MSG(msg.ParseFromArray(pPdu->GetBodyData(), pPdu->GetBodyLength()));
 	uint32_t user_count = msg.user_id_list_size();
-	log("HandleClientUsersStatusReq, user_id=%u, query_count=%u.", GetUserId(), user_count);
+	log("HandleClientUsersStatusReq, user_id=%u, query_count=%u., send to RouteServer", GetUserId(), user_count);
 
 	CRouteServConn* pRouteConn = get_route_serv_conn();
 	if(pRouteConn)
@@ -873,7 +888,7 @@ void CMsgConn::_HandleClientDepartmentRequest(CImPdu *pPdu)
 {
 	IM::Buddy::IMDepartmentReq msg;
 	CHECK_PB_PARSE_MSG(msg.ParseFromArray(pPdu->GetBodyData(), pPdu->GetBodyLength()));
-	log("HandleClientDepartmentRequest, user_id=%u, latest_update_time=%u.", GetUserId(), msg.latest_update_time());
+	log("HandleClientDepartmentRequest, user_id=%u, latest_update_time=%u., send to DBProxyServer", GetUserId(), msg.latest_update_time());
 	CDBServConn* pDBConn = get_db_serv_conn();
 	if (pDBConn) {
 		CDbAttachData attach(ATTACH_TYPE_HANDLE, m_handle, 0);
@@ -894,7 +909,7 @@ void CMsgConn::_HandleClientDeviceToken(CImPdu *pPdu)
 	IM::Login::IMDeviceTokenReq msg;
 	CHECK_PB_PARSE_MSG(msg.ParseFromArray(pPdu->GetBodyData(), pPdu->GetBodyLength()));
 	string device_token = msg.device_token();
-	log("HandleClientDeviceToken, user_id=%u, device_token=%s ", GetUserId(), device_token.c_str());
+	log("HandleClientDeviceToken, user_id=%u, device_token=%s, send to client, and, send to DBProxyServer ", GetUserId(), device_token.c_str());
 
 	IM::Login::IMDeviceTokenRsp msg2;
 	msg.set_user_id(GetUserId());
@@ -916,7 +931,7 @@ void CMsgConn::_HandleClientDeviceToken(CImPdu *pPdu)
 
 void CMsgConn::AddToSendList(uint32_t msg_id, uint32_t from_id)
 {
-	//log("AddSendMsg, seq_no=%u, from_id=%u ", seq_no, from_id);
+	log("AddSendMsg, msg_id=%u, from_id=%u ", msg_id, from_id);
 	msg_ack_t msg;
 	msg.msg_id = msg_id;
 	msg.from_id = from_id;
@@ -928,7 +943,7 @@ void CMsgConn::AddToSendList(uint32_t msg_id, uint32_t from_id)
 
 void CMsgConn::DelFromSendList(uint32_t msg_id, uint32_t from_id)
 {
-	//log("DelSendMsg, seq_no=%u, from_id=%u ", seq_no, from_id);
+	log("DelSendMsg, msg_id=%u, from_id=%u ", msg_id, from_id);
 	for (list<msg_ack_t>::iterator it = m_send_msg_list.begin(); it != m_send_msg_list.end(); it++) {
 		msg_ack_t msg = *it;
 		if ( (msg.msg_id == msg_id) && (msg.from_id == from_id) ) {
@@ -955,7 +970,7 @@ uint32_t CMsgConn::GetClientTypeFlag()
 void CMsgConn::_HandleChangeSignInfoRequest(CImPdu* pPdu) {
 	IM::Buddy::IMChangeSignInfoReq msg;
 	CHECK_PB_PARSE_MSG(msg.ParseFromArray(pPdu->GetBodyData(), pPdu->GetBodyLength()));
-	log("HandleChangeSignInfoRequest, user_id=%u ", GetUserId());
+	log("HandleChangeSignInfoRequest, user_id=%u, send to DBProxyServer ", GetUserId());
 	CDBServConn* pDBConn = get_db_serv_conn();
 	if (pDBConn) {
 		msg.set_user_id(GetUserId());
@@ -966,10 +981,11 @@ void CMsgConn::_HandleChangeSignInfoRequest(CImPdu* pPdu) {
 		pDBConn->SendPdu(pPdu);
 	}
 }
+
 void CMsgConn::_HandlePushShieldRequest(CImPdu* pPdu) {
 	IM::Login::IMPushShieldReq msg;
 	CHECK_PB_PARSE_MSG(msg.ParseFromArray(pPdu->GetBodyData(), pPdu->GetBodyLength()));
-	log("_HandlePushShieldRequest, user_id=%u, shield_status ", GetUserId(), msg.shield_status());
+	log("_HandlePushShieldRequest, user_id=%u, shield_status, send to DBProxyServer ", GetUserId(), msg.shield_status());
 	CDBServConn* pDBConn = get_db_serv_conn();
 	if (pDBConn) {
 		msg.set_user_id(GetUserId());
@@ -984,7 +1000,7 @@ void CMsgConn::_HandlePushShieldRequest(CImPdu* pPdu) {
 void CMsgConn::_HandleQueryPushShieldRequest(CImPdu* pPdu) {
 	IM::Login::IMQueryPushShieldReq msg;
 	CHECK_PB_PARSE_MSG(msg.ParseFromArray(pPdu->GetBodyData(), pPdu->GetBodyLength()));
-	log("HandleChangeSignInfoRequest, user_id=%u ", GetUserId());
+	log("HandleChangeSignInfoRequest, user_id=%u, send to DBProxyServer ", GetUserId());
 	CDBServConn* pDBConn = get_db_serv_conn();
 	if (pDBConn) {
 		msg.set_user_id(GetUserId());

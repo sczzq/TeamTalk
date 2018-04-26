@@ -276,6 +276,7 @@ void CFileServConn::_HandleFileServerIPRsp(CImPdu* pPdu)
 	IM::Server::IMFileServerIPRsp msg;
 	CHECK_PB_PARSE_MSG(msg.ParseFromArray(pPdu->GetBodyData(), pPdu->GetBodyLength()));
 	uint32_t ip_addr_cnt = msg.ip_addr_list_size();
+	log("begin");
 
 	for (uint32_t i = 0; i < ip_addr_cnt ; i++)
 	{

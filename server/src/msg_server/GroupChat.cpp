@@ -210,7 +210,7 @@ void CGroupChat::HandleGroupMessage(CImPdu* pPdu)
 	uint8_t msg_type = msg.msg_type();
 	CDbAttachData attach_data((uchar_t*)msg.attach_data().c_str(), msg.attach_data().length());
 
-	log("HandleGroupMsg, %u->%u, msg id=%u. ", from_user_id, to_group_id, msg_id);
+	log("HandleGroupMsg, from user_id=%u to group_id=%u, msg id=%u. ", from_user_id, to_group_id, msg_id);
 
 	CMsgConn* pFromConn = CImUserManager::GetInstance()->GetMsgConnByHandle(from_user_id,
 			attach_data.GetHandle());
@@ -559,6 +559,7 @@ void CGroupChat::_SendPduToUser(CImPdu* pPdu, uint32_t user_id, CMsgConn* pReqCo
 	if(!pPdu) {
 		return;
 	}
+	log("begin");
 	CImUser* pToUser = CImUserManager::GetInstance()->GetImUserById(user_id);
 	if(pToUser) {
 		pToUser->BroadcastPdu(pPdu, pReqConn);
