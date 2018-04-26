@@ -211,8 +211,8 @@ uint32_t ClientConn::sendMsgAck(uint32_t nUserId, uint32_t nPeerId, IM::BaseDefi
 {
 	CImPdu cPdu;
 	IM::Message::IMMsgDataReadAck msg;
-	msg.set_user_id(nUserId);
-	msg.set_session_id(nPeerId);
+	msg.set_user_id(nPeerId); // NOTE: Msg is from PeerID to UserID, so MsgAck should be PeerID to UserID.
+	msg.set_session_id(nUserId);
 	msg.set_session_type(nType);
 	msg.set_msg_id(nMsgId);
 	cPdu.SetPBMsg(&msg);
